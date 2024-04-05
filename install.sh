@@ -1,5 +1,14 @@
 #!/bin/bash
 
+check_version() {
+	version=$1
+
+	if [[ "${version}" == "$(zig version)" ]]; then
+		echo "Zig ${version} is already installed."
+		exit 0
+	fi
+}
+
 download_version() {
 	version=$1
 
@@ -52,6 +61,7 @@ main() {
 		echo "Found latest Zig version: ${version}"
 	fi
 
+	check_version "${version}"
 	download_version "${version}"
 	create_directories
 	cleanup_old_installations
