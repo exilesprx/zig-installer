@@ -1,0 +1,21 @@
+name: Lint script
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install shellcheck
+        run: |
+          apt-get -y update
+          apt-get -y install shellcheck
+
+      - name: Lint file
+        run: shellcheck install.sh
+
