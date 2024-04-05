@@ -13,8 +13,8 @@ jobs:
 
       - name: Install shellcheck
         run: |
-          apt-get -y update
-          apt-get -y install shellcheck
+          sudo apt-get -y update
+          sudo apt-get -y install shellcheck
 
       - name: Lint file
         run: shellcheck install.sh
