@@ -16,7 +16,7 @@ download_version() {
 	wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"
 
 	if [[ -f "/opt/zig/zig-linux-x86_64-${version}.tar.xz" ]]; then
-		tar -xvf "/opt/zig/zig-linux-x86_64-${version}.tar.xz"
+		tar -xf "/opt/zig/zig-linux-x86_64-${version}.tar.xz" -C "/opt/zig/"
 		rm "/opt/zig/zig-linux-x86_64-${version}.tar.xz"
 	else
 		echo "Zig download failed."
@@ -61,7 +61,6 @@ main() {
 		exit 1
 	else
 		echo "Found latest Zig version: ${version}"
-		exit 0
 	fi
 
 	check_version "${version}"
