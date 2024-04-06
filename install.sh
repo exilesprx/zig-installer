@@ -46,8 +46,10 @@ install_version() {
 
 	if [[ -f /opt/zig/bin/zig ]]; then
 		echo "Zig $(zig version) installed successfully."
+		exit 0
 	else
 		echo "Zig installation failed."
+		exit 1
 	fi
 }
 
@@ -59,6 +61,7 @@ main() {
 		exit 1
 	else
 		echo "Found latest Zig version: ${version}"
+		exit 0
 	fi
 
 	check_version "${version}"
