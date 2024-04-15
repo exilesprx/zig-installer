@@ -12,8 +12,13 @@ check_version() {
 download_version() {
 	version=$1
 
-	echo "Downloading Zig version: ${version}"
-	wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"
+	if wget -q --spider "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"; then
+		echo "Downloading Zig version: ${version}"
+		wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"
+	else
+		echo "Zig version ${version} not found."
+		exit 1
+	fi
 
 	if [[ -f "/opt/zig/zig-linux-x86_64-${version}.tar.xz" ]]; then
 		tar -xf "/opt/zig/zig-linux-x86_64-${version}.tar.xz" -C "/opt/zig/"
