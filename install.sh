@@ -40,7 +40,7 @@ install_version() {
 	version=$1
 
 	echo "Installing Zig version: ${version}"
-	ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
+	sudo ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
 	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Zig $(zig version) installed successfully."
