@@ -29,17 +29,10 @@ download_version() {
 	fi
 }
 
-create_directories() {
-	if [[ ! -d /opt/zig/bin ]]; then
-		echo "Creating /opt/zig/bin directory."
-		mkdir -p /opt/zig/bin
-	fi
-}
-
 cleanup_old_installations() {
-	if [[ -f /opt/zig/bin/zig ]]; then
+	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Removing old Zig version $(zig version)."
-		rm /opt/zig/bin/zig
+		rm /usr/local/bin/zig
 	fi
 }
 
@@ -47,9 +40,9 @@ install_version() {
 	version=$1
 
 	echo "Installing Zig version: ${version}"
-	ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /opt/zig/bin/zig
+	ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
-	if [[ -f /opt/zig/bin/zig ]]; then
+	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Zig $(zig version) installed successfully."
 		exit 0
 	else
@@ -70,7 +63,6 @@ main() {
 
 	check_version "${version}"
 	download_version "${version}"
-	create_directories
 	cleanup_old_installations
 	install_version "${version}"
 }
