@@ -32,7 +32,7 @@ download_version() {
 cleanup_old_installations() {
 	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Removing old Zig version $(zig version)."
-		rm /usr/local/bin/zig
+		sudo rm /usr/local/bin/zig
 	fi
 }
 
