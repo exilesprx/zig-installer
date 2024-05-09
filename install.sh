@@ -12,6 +12,11 @@ check_version() {
 download_version() {
 	version=$1
 
+	if [[ ! -d /opt/zig ]]; then
+		sudo mkdir -p /opt/zig
+		sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
+	fi
+
 	if wget -q --spider "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"; then
 		echo "Downloading Zig version: ${version}"
 		wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"
@@ -44,10 +49,40 @@ install_version() {
 
 	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Zig $(zig version) installed successfully."
-		exit 0
 	else
 		echo "Zig installation failed."
 		exit 1
+	fi
+}
+
+download_zls() {
+
+	if [[ -d /opt/zig/zls ]]; then
+		echo "ZLS already exists. Fetching latest."
+		cwd=$(pwd)
+		cd /opt/zls || exit 1
+		git pull
+		cd "$cwd" || exit 1
+	else
+		echo "Downloading ZLS."
+		sudo mkdir -p /opt/zls
+		sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
+		git clone https://github.com/zigtools/zls.git /opt/zls
+	fi
+}
+
+build_zls() {
+	echo "Building ZLS."
+	cwd=$(pwd)
+	cd /opt/zls || exit 1
+	zig build -Doptimize=ReleaseSafe
+	cd "$cwd" || exit 1
+}
+
+install_zls() {
+	if [[ ! -f /usr/local/bin/zls ]]; then
+		echo "Installing ZLS."
+		sudo ln -s /opt/zls/zig-out/bin/zls /usr/local/bin/zls
 	fi
 }
 
@@ -65,6 +100,11 @@ main() {
 	download_version "${version}"
 	cleanup_old_installations
 	install_version "${version}"
+	download_zls
+	build_zls
+	install_zls
+
+	exit 0
 }
 
 main "$@"
