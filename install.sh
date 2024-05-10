@@ -1,5 +1,21 @@
 #!/bin/bash
 
+zig_install() {
+	version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
+
+	if [[ -z "${version}" ]]; then
+		echo "Could not determine latest Zig version."
+		exit 1
+	else
+		echo "Found latest Zig version: ${version}"
+	fi
+
+	check_version "${version}"
+	download_version "${version}"
+	cleanup_old_installations
+	install_version "${version}"
+}
+
 check_version() {
 	version=$1
 
@@ -11,6 +27,11 @@ check_version() {
 
 download_version() {
 	version=$1
+
+	if [[ ! -d /opt/zig ]]; then
+		sudo mkdir -p /opt/zig
+		sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
+	fi
 
 	if wget -q --spider "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"; then
 		echo "Downloading Zig version: ${version}"
@@ -44,27 +65,60 @@ install_version() {
 
 	if [[ -f /usr/local/bin/zig ]]; then
 		echo "Zig $(zig version) installed successfully."
-		exit 0
 	else
 		echo "Zig installation failed."
 		exit 1
 	fi
 }
 
-main() {
-	version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
+zls_install() {
+	fetch_zls
+	build_zls
+	install_zls
+}
 
-	if [[ -z "${version}" ]]; then
-		echo "Could not determine latest Zig version."
-		exit 1
+fetch_zls() {
+
+	if [[ -d /opt/zls ]]; then
+		cd /opt/zls || exit 1
+		if [[ $(git rev-list HEAD...origin/master --count) -gt 0 ]]; then
+			echo "ZLS already exists. Fetching latest."
+			git pull
+		fi
 	else
-		echo "Found latest Zig version: ${version}"
+		echo "Fetching ZLS."
+		sudo mkdir -p /opt/zls
+		sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
+		git clone https://github.com/zigtools/zls.git /opt/zls
 	fi
+}
 
-	check_version "${version}"
-	download_version "${version}"
-	cleanup_old_installations
-	install_version "${version}"
+build_zls() {
+	echo "Building ZLS."
+	cd /opt/zls || exit 1
+	zig build -Doptimize=ReleaseSafe
+}
+
+install_zls() {
+	if [[ ! -f /usr/local/bin/zls ]]; then
+		echo "Installing ZLS."
+		sudo ln -s /opt/zls/zig-out/bin/zls /usr/local/bin/zls
+	fi
+}
+
+main() {
+	cwd=$(pwd)
+	if [[ "$*" -eq 0 ]]; then
+		zig_install
+		zls_install
+	elif [[ "$1" == "--zig-only" ]]; then
+		zig_install
+	elif [[ "$1" == "--zls-only" ]]; then
+		zls_install
+	fi
+	cd "$cwd" || exit 1
+	echo "Done!"
+	exit 0
 }
 
 main "$@"
