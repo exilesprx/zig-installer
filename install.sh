@@ -57,7 +57,7 @@ install_version() {
 
 download_zls() {
 
-	if [[ -d /opt/zig/zls ]]; then
+	if [[ -d /opt/zls ]]; then
 		echo "ZLS already exists. Fetching latest."
 		cwd=$(pwd)
 		cd /opt/zls || exit 1
