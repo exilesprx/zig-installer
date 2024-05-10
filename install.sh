@@ -1,5 +1,21 @@
 #!/bin/bash
 
+zig_install() {
+	version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
+
+	if [[ -z "${version}" ]]; then
+		echo "Could not determine latest Zig version."
+		exit 1
+	else
+		echo "Found latest Zig version: ${version}"
+	fi
+
+	check_version "${version}"
+	download_version "${version}"
+	cleanup_old_installations
+	install_version "${version}"
+}
+
 check_version() {
 	version=$1
 
@@ -55,16 +71,22 @@ install_version() {
 	fi
 }
 
-download_zls() {
+zls_install() {
+	fetch_zls
+	build_zls
+	install_zls
+}
+
+fetch_zls() {
 
 	if [[ -d /opt/zls ]]; then
-		echo "ZLS already exists. Fetching latest."
-		cwd=$(pwd)
 		cd /opt/zls || exit 1
-		git pull
-		cd "$cwd" || exit 1
+		if [[ $(git rev-list HEAD...origin/master --count) -gt 0 ]]; then
+			echo "ZLS already exists. Fetching latest."
+			git pull
+		fi
 	else
-		echo "Downloading ZLS."
+		echo "Fetching ZLS."
 		sudo mkdir -p /opt/zls
 		sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
 		git clone https://github.com/zigtools/zls.git /opt/zls
@@ -73,10 +95,8 @@ download_zls() {
 
 build_zls() {
 	echo "Building ZLS."
-	cwd=$(pwd)
 	cd /opt/zls || exit 1
 	zig build -Doptimize=ReleaseSafe
-	cd "$cwd" || exit 1
 }
 
 install_zls() {
@@ -87,23 +107,17 @@ install_zls() {
 }
 
 main() {
-	version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
-
-	if [[ -z "${version}" ]]; then
-		echo "Could not determine latest Zig version."
-		exit 1
-	else
-		echo "Found latest Zig version: ${version}"
+	cwd=$(pwd)
+	if [[ "$*" -eq 0 ]]; then
+		zig_install
+		zls_install
+	elif [[ "$1" == "--zig-only" ]]; then
+		zig_install
+	elif [[ "$1" == "--zls-only" ]]; then
+		zls_install
 	fi
-
-	check_version "${version}"
-	download_version "${version}"
-	cleanup_old_installations
-	install_version "${version}"
-	download_zls
-	build_zls
-	install_zls
-
+	cd "$cwd" || exit 1
+	echo "Done!"
 	exit 0
 }
 
