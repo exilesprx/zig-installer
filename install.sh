@@ -86,7 +86,6 @@ fetch_zls() {
 			echo "Fetching latest"
 			git pull
 		fi
-		echo "Already latest"
 	else
 		echo "Fetching ZLS."
 		sudo mkdir -p /opt/zls
