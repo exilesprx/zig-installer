@@ -81,10 +81,12 @@ fetch_zls() {
 
 	if [[ -d /opt/zls ]]; then
 		cd /opt/zls || exit 1
+		git fetch
 		if [[ $(git rev-list HEAD...origin/master --count) -gt 0 ]]; then
-			echo "ZLS already exists. Fetching latest."
+			echo "Fetching latest"
 			git pull
 		fi
+		echo "Already latest"
 	else
 		echo "Fetching ZLS."
 		sudo mkdir -p /opt/zls
