@@ -33,7 +33,8 @@ Install only Zig:
 ./install.sh --zig-only
 ```
 
-Install only ZLS:
+Install only ZLS (Zig Language Server).  
+ _Note: You must have Zig installed in order to compile ZLS._
 
 ```sh
 ./install.sh --zls-only
