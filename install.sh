@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Help function to display usage information
+help() {
+	echo "Usage: $0 [OPTIONS]"
+	echo "Install Zig and ZLS (Zig Language Server) or only one of them."
+	echo
+	echo "Options:"
+	echo "  --zig-only      Install only Zig"
+	echo "  --zls-only      Install only ZLS (Zig Language Server)"
+	echo "  -h, --help      Display this help message and exit"
+	exit 0
+}
+
 zig_install() {
 	version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
 
@@ -116,6 +128,11 @@ main() {
 		zig_install
 	elif [[ "$1" == "--zls-only" ]]; then
 		zls_install
+	elif [[ "$1" == "-h" || "$1" == "--help" ]]; then
+		help
+	else
+		echo "Invalid option: $1"
+		help
 	fi
 	cd "$cwd" || exit 1
 	echo "Done!"
