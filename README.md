@@ -49,6 +49,7 @@ Display the help message:
 ## Requirements
 
 - Bash
+- jq
 - Wget (for downloading Zig binary)
 - Git (for downloading ZLS)
 
