@@ -121,7 +121,7 @@ install_zls() {
 
 main() {
 	cwd=$(pwd)
-	if [[ "$*" -eq 0 ]]; then
+	if [[ "$#" -eq 0 ]]; then
 		zig_install
 		zls_install
 	elif [[ "$1" == "--zig-only" ]]; then
