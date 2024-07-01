@@ -30,14 +30,11 @@ chomod +x install.sh
 
 ### Options
 
-- `--zig-only`  
-  Install only Zig.
+- `--zig-only`: Install only Zig.
 
-- `--zls-only`  
-  Install only ZLS (Zig Language Server).
+- `--zls-only`: Install only ZLS (Zig Language Server).
 
-- `-h`, `--help`  
-  Display the help message and exit.
+- `-h`, `--help`: Display the help message and exit.
 
 ## Examples
 
