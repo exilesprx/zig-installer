@@ -10,6 +10,7 @@ Before running the script, ensure you have the following dependencies installed:
 - `jq`
 - `Wget` (for downloading Zig binary)
 - `Git` (for downloading ZLS)
+- `minisign` (for verifying Zig download)
 
 ## Installation
 
