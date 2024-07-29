@@ -24,7 +24,8 @@ zig_install() {
 
   check_version "${version}"
   download_version "${version}"
-  cleanup_old_installations
+  remove_old_installation
+  cleanup "${version}"
   install_version "${version}"
 }
 
@@ -39,52 +40,60 @@ check_version() {
 
 download_version() {
   version=$1
-  pub_key="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
+  pubkey="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
   search_string="Signature and comment signature verified"
+  tarfile="zig-linux-x86_64-${version}.tar.xz"
 
   if [[ ! -d /opt/zig ]]; then
     sudo mkdir -p /opt/zig
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
   fi
 
-  if wget -q --spider "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"; then
+  if wget -q --spider "https://ziglang.org/builds/${tarfile}"; then
     echo "Downloading Zig version: ${version}"
-    wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz"
+    wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}"
   else
     echo "Zig version ${version} not found."
     exit 1
   fi
 
   shasum=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.src.shasum')
-  wget -P /opt/zig/ "https://ziglang.org/builds/zig-linux-x86_64-${version}.tar.xz.minisig"
-
   if [[ -z "${shasum}" ]]; then
     echo "Could not determine SHA-256 checksum for Zig version ${version}."
-    rm "/opt/zig/zig-linux-x86_64-${version}.tar.xz" "/opt/zig/zig-linux-x86_64-${version}.tar.xz.minisig"
+    rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
     exit 1
   fi
 
-  cd /opt/zig || exit 1
-  result=$(minisign -Vm "zig-linux-x86_64-${version}.tar.xz" -P "${pub_key}")
-
-  if [[ "$result" == *"$search_string"* ]]; then
-    echo "Zig download verified."
+  if wget -q --spider "https://ziglang.org/builds/${tarfile}.minisig"; then
+    echo "Downloading Zig version: ${version} signature"
+    wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}.minisig"
   else
-    echo "Zig download verification failed."
-    rm "/opt/zig/zig-linux-x86_64-${version}.tar.xz" "/opt/zig/zig-linux-x86_64-${version}.tar.xz.minisig"
+    echo "Zig version ${version} signature not found. Cannot verify tar file."
+    rm "/opt/zig/${tarfile}"
     exit 1
   fi
 
-  if [[ -f "/opt/zig/zig-linux-x86_64-${version}.tar.xz" ]]; then
-    tar -xf "/opt/zig/zig-linux-x86_64-${version}.tar.xz" -C "/opt/zig/"
-    rm "/opt/zig/zig-linux-x86_64-${version}.tar.xz"
-  else
-    echo "Zig download failed."
+  if [[ ! -f "/opt/zig/${tarfile}" || ! -f "/opt/zig/${tarfile}.minisig" ]]; then
+    echo "Either tar file or signature file not found. Aborting."
+    rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
     exit 1
   fi
+
+  output=$(minisign -Vm "/opt/zig/${tarfile}" -P "${pubkey}")
+  if [[ "$output" == *"$search_string"* ]]; then
+    echo "Zig tar verified."
+    rm "/opt/zig/${tarfile}.minisig"
+  else
+    echo "Zig tar verification failed."
+    rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
+    exit 1
+  fi
+
+  tar -xf "${tarfile}" -C "/opt/zig/"
+  rm "/opt/zig/${tarfile}"
 }
 
-cleanup_old_installations() {
+remove_old_installation() {
   if [[ -f /usr/local/bin/zig ]]; then
     echo "Removing old Zig version $(zig version)."
     sudo rm /usr/local/bin/zig
