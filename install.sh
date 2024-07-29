@@ -57,13 +57,6 @@ download_version() {
     exit 1
   fi
 
-  shasum=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.src.shasum')
-  if [[ -z "${shasum}" ]]; then
-    echo "Could not determine SHA-256 checksum for Zig version ${version}."
-    rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
-    exit 1
-  fi
-
   if wget -q --spider "https://ziglang.org/builds/${tarfile}.minisig"; then
     echo "Downloading Zig version: ${version} signature"
     wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}.minisig"
