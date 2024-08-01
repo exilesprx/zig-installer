@@ -82,7 +82,7 @@ download_version() {
     exit 1
   fi
 
-  tar -xf "${tarfile}" -C "/opt/zig/"
+  tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
   rm "/opt/zig/${tarfile}"
 }
 
