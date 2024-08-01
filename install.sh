@@ -13,16 +13,17 @@ help() {
 }
 
 check_dependencies() {
-  pkgs=("git" "wget" "jq" "minisign")
+  local pkgs=("git" "wget" "jq" "minisign")
   for pkg in "${pkgs[@]}"; do
     if ! which "${pkg}" >/dev/null 2>&1; then
-      echo "$pkg is not installed. Please install in order to use this script."
+      echo "Missing $pkg. Please install it."
     fi
   done
 }
 
 zig_install() {
   version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
+  tarfile="zig-linux-x86_64-${version}.tar.xz"
 
   if [[ -z "${version}" ]]; then
     echo "Could not determine latest Zig version."
@@ -31,16 +32,15 @@ zig_install() {
     echo "Found latest Zig version: ${version}"
   fi
 
-  check_version "${version}"
-  download_version "${version}"
+  check_version
+  download_version
+  verify_signature
   remove_old_installation
-  cleanup "${version}"
-  install_version "${version}"
+  cleanup
+  install_version
 }
 
 check_version() {
-  version=$1
-
   if [[ "${version}" == "$(zig version)" ]]; then
     echo "Zig ${version} is already installed."
     exit 0
@@ -48,51 +48,46 @@ check_version() {
 }
 
 download_version() {
-  version=$1
-  pubkey="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
-  search_string="Signature and comment signature verified"
-  tarfile="zig-linux-x86_64-${version}.tar.xz"
-
   if [[ ! -d /opt/zig ]]; then
     sudo mkdir -p /opt/zig
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
   fi
 
-  if wget -q --spider "https://ziglang.org/builds/${tarfile}"; then
+  if [[ -f "/opt/zig/${tarfile}" ]]; then
+    echo "Zig version ${version} already downloaded."
+  elif wget -q --spider "https://ziglang.org/builds/${tarfile}"; then
     echo "Downloading Zig version: ${version}"
     wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}"
   else
     echo "Zig version ${version} not found."
     exit 1
   fi
+}
 
-  if wget -q --spider "https://ziglang.org/builds/${tarfile}.minisig"; then
-    echo "Downloading Zig version: ${version} signature"
-    wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}.minisig"
-  else
-    echo "Zig version ${version} signature not found. Cannot verify tar file."
-    rm "/opt/zig/${tarfile}"
-    exit 1
-  fi
-
-  if [[ ! -f "/opt/zig/${tarfile}" || ! -f "/opt/zig/${tarfile}.minisig" ]]; then
-    echo "Either tar file or signature file not found. Aborting."
-    rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
-    exit 1
-  fi
+verify_signature() {
+  local output
+  local pubkey="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
+  local search_string="Signature and comment signature verified"
 
   output=$(minisign -Vm "/opt/zig/${tarfile}" -P "${pubkey}")
+  if [[ -f "/opt/zig/${tarfile}.minisign" ]]; then
+    echo "Zig signature already downloaded."
+  elif wget -q --spider "https://ziglang.org/builds/${tarfile}.minisig"; then
+    echo "Downloading Zig signature"
+    wget -P /opt/zig/ "https://ziglang.org/builds/${tarfile}.minisig"
+  else
+    echo "Zig signature not found. Cannot verify tar file."
+    exit 1
+  fi
+
   if [[ "$output" == *"$search_string"* ]]; then
     echo "Zig tar verified."
     rm "/opt/zig/${tarfile}.minisig"
   else
-    echo "Zig tar verification failed."
+    echo "Zig tar verification failed. Removing files signature and tarfile."
     rm "/opt/zig/${tarfile}" "/opt/zig/${tarfile}.minisig"
     exit 1
   fi
-
-  tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
-  rm "/opt/zig/${tarfile}"
 }
 
 remove_old_installation() {
@@ -103,9 +98,9 @@ remove_old_installation() {
 }
 
 install_version() {
-  version=$1
-
   echo "Installing Zig version: ${version}"
+  tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
+  rm "/opt/zig/${tarfile}"
   sudo ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
   if [[ -f /usr/local/bin/zig ]]; then
@@ -153,6 +148,7 @@ install_zls() {
 }
 
 main() {
+  local cwd
   check_dependencies
   cwd=$(pwd)
   if [[ "$#" -eq 0 ]]; then
