@@ -12,6 +12,15 @@ help() {
   exit 0
 }
 
+check_dependencies() {
+  commands=("git" "wget" "jq" "minisign")
+  for cmd in "${commands[@]}"; do
+    if ! which "${cmd}" >/dev/null 2>&1; then
+      echo "$cmd is not installed, but this script requires it."
+    fi
+  done
+}
+
 zig_install() {
   version=$(wget -qO- https://ziglang.org/download/index.json | jq -r '.master.version')
 
@@ -144,6 +153,7 @@ install_zls() {
 }
 
 main() {
+  check_dependencies
   cwd=$(pwd)
   if [[ "$#" -eq 0 ]]; then
     zig_install
