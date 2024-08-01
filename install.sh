@@ -13,10 +13,10 @@ help() {
 }
 
 check_dependencies() {
-  commands=("git" "wget" "jq" "minisign")
-  for cmd in "${commands[@]}"; do
-    if ! which "${cmd}" >/dev/null 2>&1; then
-      echo "$cmd is not installed, but this script requires it."
+  pkgs=("git" "wget" "jq" "minisign")
+  for pkg in "${pkgs[@]}"; do
+    if ! which "${pkg}" >/dev/null 2>&1; then
+      echo "$pkg is not installed. Please install in order to use this script."
     fi
   done
 }
