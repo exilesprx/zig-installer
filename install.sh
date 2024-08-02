@@ -36,7 +36,6 @@ zig_install() {
   download_version
   verify_signature
   remove_old_installation
-  cleanup
   install_version
 }
 
@@ -69,8 +68,7 @@ verify_signature() {
   local pubkey="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
   local search_string="Signature and comment signature verified"
 
-  output=$(minisign -Vm "/opt/zig/${tarfile}" -P "${pubkey}")
-  if [[ -f "/opt/zig/${tarfile}.minisign" ]]; then
+  if [[ -f "/opt/zig/${tarfile}.minisig" ]]; then
     echo "Zig signature already downloaded."
   elif wget -q --spider "https://ziglang.org/builds/${tarfile}.minisig"; then
     echo "Downloading Zig signature"
@@ -80,6 +78,7 @@ verify_signature() {
     exit 1
   fi
 
+  output=$(minisign -Vm "/opt/zig/${tarfile}" -P "${pubkey}")
   if [[ "$output" == *"$search_string"* ]]; then
     echo "Zig tar verified."
     rm "/opt/zig/${tarfile}.minisig"
