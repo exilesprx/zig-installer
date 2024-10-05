@@ -18,7 +18,8 @@ jobs:
         run: |
           wget "https://github.com/jedisct1/minisign/releases/download/${MINISIGN_VERSION}/minisign-${MINISIGN_VERSION}-linux.tar.gz"
           tar -xvf "minisign-${MINISIGN_VERSION}-linux.tar.gz"
-          sudo ln -sf ./minisign-linux/x86_64/minisign /usr/local/bin/minisign
+          sudo ln -sf "${PWD}/minisign-linux/x86_64/minisign" /usr/local/bin/minisign
+          minisign -v
 
       - name: Run script
         run: source install.sh
