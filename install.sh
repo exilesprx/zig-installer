@@ -35,7 +35,6 @@ zig_install() {
   check_version
   download_version
   verify_signature
-  remove_old_installation
   install_version
 }
 
@@ -89,18 +88,11 @@ verify_signature() {
   fi
 }
 
-remove_old_installation() {
-  if [[ -f /usr/local/bin/zig ]]; then
-    echo "Removing old Zig version $(zig version)."
-    sudo rm /usr/local/bin/zig
-  fi
-}
-
 install_version() {
   echo "Installing Zig version: ${version}"
   tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
   rm "/opt/zig/${tarfile}"
-  sudo ln -s "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
+  sudo ln -sf "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
   if [[ -f /usr/local/bin/zig ]]; then
     echo "Zig $(zig version) installed successfully."
