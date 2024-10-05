@@ -13,8 +13,8 @@ jobs:
 
       - name: Install minisign
         run: |
-          apt-get -y update
-          apt-get -y install minisign
+          sudo apt-get -y update
+          sudo apt-get -y install minisign
 
       - name: Run script
         run: source install.sh
