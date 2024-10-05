@@ -12,7 +12,9 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install minisign
-        run: apt-get -y install minisign
+        run: |
+          apt-get -y update
+          apt-get -y install minisign
 
       - name: Run script
         run: source install.sh
