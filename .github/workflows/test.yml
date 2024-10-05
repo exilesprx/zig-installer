@@ -1,0 +1,25 @@
+name: Test script
+
+on:
+  push:
+    branches:
+      - "**"
+
+env:
+  MINISIGN_VERSION: 0.11
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install minisign
+        run: |
+          wget "https://github.com/jedisct1/minisign/releases/download/${MINISIGN_VERSION}/minisign-${MINISIGN_VERSION}-linux.tar.gz"
+          tar -xvf "minisign-${MINISIGN_VERSION}-linux.tar.gz"
+          sudo ln -sf "${PWD}/minisign-linux/x86_64/minisign" /usr/local/bin/minisign
+          minisign -v
+
+      - name: Run script
+        run: source install.sh
