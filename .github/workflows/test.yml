@@ -6,10 +6,13 @@ on:
       - "**"
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Install minisign
+        run: apt-get -y install minisign
 
       - name: Run script
         run: source install.sh
