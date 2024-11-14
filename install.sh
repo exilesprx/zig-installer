@@ -54,7 +54,6 @@ check_version() {
 
 download_version() {
   if [[ ! -d /opt/zig ]]; then
-    echo "!! Sudo password may be required for creating zig directory. !!"
     sudo mkdir -p /opt/zig
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
   fi
@@ -100,7 +99,6 @@ install_version() {
   echo "Installing Zig version: ${version}"
   tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
   rm "/opt/zig/${tarfile}"
-  echo "!! Sudo password may be required for installing zig. !!"
   sudo ln -sf "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
   if [[ -f /usr/local/bin/zig ]]; then
@@ -128,7 +126,6 @@ fetch_zls() {
     fi
   else
     echo "Fetching ZLS."
-    echo "!! Sudo password may be required for creating zls directory. !!"
     sudo mkdir -p /opt/zls
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
     git clone https://github.com/zigtools/zls.git /opt/zls
@@ -149,6 +146,8 @@ install_zls() {
 }
 
 main() {
+  echo "!! Sudo password may be required !!"
+
   check_user
   check_dependencies
 
