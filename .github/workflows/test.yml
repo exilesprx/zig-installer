@@ -2,8 +2,8 @@ name: Test script
 
 on:
   push:
-    branches:
-      - "**"
+    branches-ignore:
+      - "main"
 
 env:
   MINISIGN_VERSION: 0.11

@@ -2,8 +2,8 @@ name: Lint script
 
 on:
   push:
-    branches:
-      - "**"
+    branches-ignore:
+      - "main"
 
 jobs:
   lint:
