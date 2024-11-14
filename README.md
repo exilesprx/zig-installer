@@ -2,6 +2,8 @@
 
 This script installs Zig and the Zig Language Server (ZLS). You can choose to install both or just one of them.
 
+**Note:** You should not run a root. Run the script as the user that will use Zig and ZLS. Sudo will be requested if when/if necessary and you may be prompted for your password at that time.
+
 ## Prerequisites
 
 Before running the script, ensure you have the following dependencies installed:

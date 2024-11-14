@@ -12,6 +12,13 @@ help() {
   exit 0
 }
 
+check_user() {
+  if [ "$(id -u)" -eq 0 ]; then
+    echo "Please run this script as a non-root user."
+    exit 1
+  fi
+}
+
 check_dependencies() {
   local pkgs=("git" "wget" "jq" "minisign")
   for pkg in "${pkgs[@]}"; do
@@ -139,8 +146,12 @@ install_zls() {
 }
 
 main() {
-  local cwd
+  echo "!! Sudo password may be required !!"
+
+  check_user
   check_dependencies
+
+  local cwd
   cwd=$(pwd)
   if [[ "$#" -eq 0 ]]; then
     zig_install
