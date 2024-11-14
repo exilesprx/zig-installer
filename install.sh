@@ -12,6 +12,13 @@ help() {
   exit 0
 }
 
+check_user() {
+  if [ "$(id -u)" -eq 0 ]; then
+    echo "Please run this script as a non-root user."
+    exit 1
+  fi
+}
+
 check_dependencies() {
   local pkgs=("git" "wget" "jq" "minisign")
   for pkg in "${pkgs[@]}"; do
@@ -47,6 +54,7 @@ check_version() {
 
 download_version() {
   if [[ ! -d /opt/zig ]]; then
+    echo "!! Sudo password may be required for creating zig directory. !!"
     sudo mkdir -p /opt/zig
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
   fi
@@ -92,6 +100,7 @@ install_version() {
   echo "Installing Zig version: ${version}"
   tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
   rm "/opt/zig/${tarfile}"
+  echo "!! Sudo password may be required for installing zig. !!"
   sudo ln -sf "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
   if [[ -f /usr/local/bin/zig ]]; then
@@ -119,6 +128,7 @@ fetch_zls() {
     fi
   else
     echo "Fetching ZLS."
+    echo "!! Sudo password may be required for creating zls directory. !!"
     sudo mkdir -p /opt/zls
     sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
     git clone https://github.com/zigtools/zls.git /opt/zls
@@ -139,8 +149,10 @@ install_zls() {
 }
 
 main() {
-  local cwd
+  check_user
   check_dependencies
+
+  local cwd
   cwd=$(pwd)
   if [[ "$#" -eq 0 ]]; then
     zig_install
