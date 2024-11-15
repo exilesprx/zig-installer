@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - "main"
+    paths:
+      - "install.sh"
+      - ".github/**"
 
 env:
   MINISIGN_VERSION: 0.11
