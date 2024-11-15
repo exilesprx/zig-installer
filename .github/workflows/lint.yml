@@ -2,8 +2,12 @@ name: Lint script
 
 on:
   push:
-    branches:
-      - "**"
+    pull_request:
+      branches:
+        - main
+    paths:
+      - "install.sh"
+      - ".github/**"
 
 jobs:
   lint:
