@@ -2,8 +2,9 @@ name: Test script
 
 on:
   push:
-    branches-ignore:
-      - "main"
+    pull_request:
+      branches:
+        - main
     paths:
       - "install.sh"
       - ".github/**"
