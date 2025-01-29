@@ -1,5 +1,7 @@
 #!/bin/bash
 
+USER=${SUDO_USER:-$(whoami)}
+
 # Help function to display usage information
 help() {
   echo "Usage: $0 [OPTIONS]"
@@ -13,8 +15,9 @@ help() {
 }
 
 check_user() {
-  if [ "$(id -u)" -eq 0 ]; then
-    echo "Please run this script as a non-root user."
+  if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root. Please use 'sudo $0' or log in as root."
+    echo "Note: if you run as root, the installed Zig and ZLS will be owned by root."
     exit 1
   fi
 }
@@ -54,8 +57,8 @@ check_version() {
 
 download_version() {
   if [[ ! -d /opt/zig ]]; then
-    sudo mkdir -p /opt/zig
-    sudo chown -R "$(whoami)":"$(whoami)" /opt/zig
+    mkdir -p /opt/zig
+    chown -R "$USER":"$USER" /opt/zig
   fi
 
   if [[ -f "/opt/zig/${tarfile}" ]]; then
@@ -99,7 +102,7 @@ install_version() {
   echo "Installing Zig version: ${version}"
   tar -xf "/opt/zig/${tarfile}" -C "/opt/zig/"
   rm "/opt/zig/${tarfile}"
-  sudo ln -sf "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
+  ln -sf "/opt/zig/zig-linux-x86_64-${version}/zig" /usr/local/bin/zig
 
   if [[ -f /usr/local/bin/zig ]]; then
     echo "Zig $(zig version) installed successfully."
@@ -126,8 +129,8 @@ fetch_zls() {
     fi
   else
     echo "Fetching ZLS."
-    sudo mkdir -p /opt/zls
-    sudo chown -R "$(whoami)":"$(whoami)" /opt/zls
+    mkdir -p /opt/zls
+    chown -R "$USER":"$USER" /opt/zls
     git clone https://github.com/zigtools/zls.git /opt/zls
   fi
 }
@@ -141,13 +144,11 @@ build_zls() {
 install_zls() {
   if [[ ! -f /usr/local/bin/zls ]]; then
     echo "Installing ZLS."
-    sudo ln -s /opt/zls/zig-out/bin/zls /usr/local/bin/zls
+    ln -s /opt/zls/zig-out/bin/zls /usr/local/bin/zls
   fi
 }
 
 main() {
-  echo "!! Sudo password may be required !!"
-
   check_user
   check_dependencies
 
