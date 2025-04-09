@@ -1,0 +1,10 @@
+# This is a gitignore file for a Zig project
+
+# ignore the envrionment file
+.env
+
+# ignore the binary produced by the build
+zig-install
+
+# ignore the log file
+*.log
