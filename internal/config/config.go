@@ -7,6 +7,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Build-time configurable defaults that can be set with linker flags
+var (
+	// DefaultZigPubKey can be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=key'"
+	DefaultZigPubKey = "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
+
+	// DefaultZigDownURL can be set with linker flags if needed
+	DefaultZigDownURL = "https://ziglang.org/builds/"
+
+	// DefaultZigIndexURL can be set with linker flags if needed
+	DefaultZigIndexURL = "https://ziglang.org/download/index.json"
+)
+
 // Config contains the application configuration
 type Config struct {
 	ZigDir       string
@@ -32,9 +44,9 @@ func NewConfig() *Config {
 		ZigDir:      "/opt/zig",
 		ZLSDir:      "/opt/zls",
 		BinDir:      "/usr/local/bin",
-		ZigPubKey:   "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U",
-		ZigDownURL:  "https://ziglang.org/builds/",
-		ZigIndexURL: "https://ziglang.org/download/index.json",
+		ZigPubKey:   DefaultZigPubKey,   // Use the linker-configurable default
+		ZigDownURL:  DefaultZigDownURL,  // Use the linker-configurable default
+		ZigIndexURL: DefaultZigIndexURL, // Use the linker-configurable default
 		EnvFile:     ".env",
 		Verbose:     false,
 		LogFile:     "zig-install.log",
@@ -50,9 +62,9 @@ func InitViper() *viper.Viper {
 	v.SetDefault("zig_dir", "/opt/zig")
 	v.SetDefault("zls_dir", "/opt/zls")
 	v.SetDefault("bin_dir", "/usr/local/bin")
-	v.SetDefault("zig_pub_key", "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U")
-	v.SetDefault("zig_down_url", "https://ziglang.org/builds/")
-	v.SetDefault("zig_index_url", "https://ziglang.org/download/index.json")
+	v.SetDefault("zig_pub_key", DefaultZigPubKey)     // Use the linker-configurable default
+	v.SetDefault("zig_down_url", DefaultZigDownURL)   // Use the linker-configurable default
+	v.SetDefault("zig_index_url", DefaultZigIndexURL) // Use the linker-configurable default
 	v.SetDefault("verbose", false)
 	v.SetDefault("log_file", "zig-install.log")
 	v.SetDefault("enable_log", true)
