@@ -36,13 +36,18 @@ type Colors struct {
 
 // Styles contains lipgloss styles used in the application
 type Styles struct {
-	Title    lipgloss.Style
-	Subtitle lipgloss.Style
-	Success  lipgloss.Style
-	Error    lipgloss.Style
-	Info     lipgloss.Style
-	Header   lipgloss.Style
-	Status   lipgloss.Style
+	Document  lipgloss.Style
+	Title     lipgloss.Style
+	Subtitle  lipgloss.Style
+	Success   lipgloss.Style
+	Error     lipgloss.Style
+	Info      lipgloss.Style
+	Header    lipgloss.Style
+	Status    lipgloss.Style
+	Separator lipgloss.Style
+	Spinner   lipgloss.Style
+	Detail    lipgloss.Style
+	Footer    lipgloss.Style
 }
 
 // NewMochaColors creates a new theme colors instance with Catppuccin Mocha palette
@@ -80,6 +85,8 @@ func NewMochaColors() *Colors {
 // NewStyles creates styles using theme colors
 func NewStyles(colors *Colors) *Styles {
 	return &Styles{
+		Document: lipgloss.NewStyle().
+			Padding(1, 2),
 		Title: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colors.Text).
@@ -98,6 +105,16 @@ func NewStyles(colors *Colors) *Styles {
 			Bold(true),
 		Status: lipgloss.NewStyle().
 			Foreground(colors.Peach),
+		Separator: lipgloss.NewStyle().
+			Foreground(colors.Surface1),
+		Spinner: lipgloss.NewStyle().
+			Foreground(colors.Sapphire),
+		Detail: lipgloss.NewStyle().
+			MarginTop(1).
+			MarginBottom(1).
+			Foreground(colors.Text),
+		Footer: lipgloss.NewStyle().
+			Foreground(colors.Subtext1),
 	}
 }
 
