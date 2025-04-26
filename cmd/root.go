@@ -48,31 +48,15 @@ This program must be run as root or with sudo.`,
 			// Initialize Viper with the command's viper instance
 			v := viper.GetViper()
 
-			// Bind config flags to viper and check for errors
-			if err := v.BindPFlag("zig_only", cmd.PersistentFlags().Lookup("zig-only")); err != nil {
-				return fmt.Errorf("error binding zig-only flag: %w", err)
-			}
-			if err := v.BindPFlag("zls_only", cmd.PersistentFlags().Lookup("zls-only")); err != nil {
-				return fmt.Errorf("error binding zls-only flag: %w", err)
-			}
-			if err := v.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose")); err != nil {
-				return fmt.Errorf("error binding verbose flag: %w", err)
-			}
-			if err := v.BindPFlag("no_color", cmd.PersistentFlags().Lookup("no-color")); err != nil {
-				return fmt.Errorf("error binding no-color flag: %w", err)
-			}
-			if err := v.BindPFlag("generate_env", cmd.PersistentFlags().Lookup("generate-env")); err != nil {
-				return fmt.Errorf("error binding generate-env flag: %w", err)
-			}
-			if err := v.BindPFlag("show_settings", cmd.PersistentFlags().Lookup("settings")); err != nil {
-				return fmt.Errorf("error binding settings flag: %w", err)
-			}
-			if err := v.BindPFlag("log_file", cmd.PersistentFlags().Lookup("log-file")); err != nil {
-				return fmt.Errorf("error binding log-file flag: %w", err)
-			}
-			if err := v.BindPFlag("enable_log", cmd.PersistentFlags().Lookup("enable-log")); err != nil {
-				return fmt.Errorf("error binding enable-log flag: %w", err)
-			}
+			// Bind config flags to viper and ignore any errors since we have defaults
+			_ = v.BindPFlag("zig_only", cmd.PersistentFlags().Lookup("zig-only"))
+			_ = v.BindPFlag("zls_only", cmd.PersistentFlags().Lookup("zls-only"))
+			_ = v.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose"))
+			_ = v.BindPFlag("no_color", cmd.PersistentFlags().Lookup("no-color"))
+			_ = v.BindPFlag("generate_env", cmd.PersistentFlags().Lookup("generate-env"))
+			_ = v.BindPFlag("show_settings", cmd.PersistentFlags().Lookup("settings"))
+			_ = v.BindPFlag("log_file", cmd.PersistentFlags().Lookup("log-file"))
+			_ = v.BindPFlag("enable_log", cmd.PersistentFlags().Lookup("enable-log"))
 
 			// Set config file if provided
 			if options.CfgFile != "" {
