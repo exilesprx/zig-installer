@@ -3,14 +3,23 @@
 
 # Allow
 !.gitignore
-!cmd/*
-!internal/*
 !.editorconfig
 !.env.example
-!.github/*
+!.github/
+!.github/**/*
 !.justfile
+!LICENSE
+!README.md
+
+# Allow the program files in the root directory
 !go.mod
 !go.sum
-!LICENSE
 !main.go
-!README.md
+
+# Allow cmd directory and all its contents
+!cmd/
+!cmd/**
+
+# Allow internal directory and all its contents
+!internal/
+!internal/**
