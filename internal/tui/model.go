@@ -6,7 +6,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/logger"
 )
@@ -40,7 +39,7 @@ type (
 func NewModel(config *config.Config, styles *Styles, logger logger.ILogger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Points
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#74c7ec"))
+	s.Style = styles.Spinner
 
 	return Model{
 		spinner:    s,
@@ -141,14 +140,10 @@ func (m Model) plainView() string {
 
 // colorView renders the UI with colors
 func (m Model) colorView() string {
-	docStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		Background(m.styles.Title.GetBackground())
+	docStyle := m.styles.Document
 
 	titleBar := m.styles.Title.Render(" ✨ Zig & ZLS Installer ✨ ")
-	separator := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#45475a")).
-		Render(strings.Repeat("─", 40))
+	separator := m.styles.Separator.Render(strings.Repeat("─", 40))
 
 	if m.quit {
 		if m.err != nil {
@@ -179,18 +174,13 @@ func (m Model) colorView() string {
 	// Add detailed output if verbose mode is enabled
 	var detailSection string
 	if m.config.Verbose && m.detailOutput != "" {
-		detailStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#cdd6f4")).
-			MarginTop(1).
-			MarginBottom(1)
+		detailStyle := m.styles.Detail
 
 		detailSection = m.styles.Subtitle.Render("Details:") + "\n" +
 			detailStyle.Render(m.detailOutput) + "\n"
 	}
 
-	footerText := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#bac2de")).
-		Render("\nPress q to quit")
+	footerText := m.styles.Footer.Render("\nPress q to quit")
 
 	return docStyle.Render(
 		titleBar + "\n\n" +
