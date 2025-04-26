@@ -1,10 +1,16 @@
-# This is a gitignore file for a Zig project
+# Ignore all
+*
 
-# ignore the envrionment file
-.env
-
-# ignore the binary produced by the build
-zig-install
-
-# ignore the log file
-*.log
+# Allow
+!.gitignore
+!cmd/*
+!internal/*
+!.editorconfig
+!.env.example
+!.github/*
+!.justfile
+!go.mod
+!go.sum
+!LICENSE
+!main.go
+!README.md
