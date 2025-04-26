@@ -4,6 +4,8 @@ This program installs Zig and the Zig Language Server (ZLS). You can choose to i
 
 **Note:** This program must be run as root. Use `sudo` when executing the binary.
 
+> **Platform Support:** Linux is fully supported. Windows and macOS builds are currently a work in progress.
+
 ## Prerequisites
 
 Before running the program, ensure you have the following dependencies installed:
