@@ -18,18 +18,18 @@ import (
 type InstallCommand struct {
 	cmd     *cobra.Command
 	options *CommandOptions
+	rootCmd *RootCommand // Add reference to root command
 }
 
 // NewInstallCommand creates a new install command instance
-func NewInstallCommand(options *CommandOptions) *InstallCommand {
+func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCommand {
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install Zig and ZLS",
 		Long: `Install the Zig compiler and ZLS language server.
 By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Create the root command to access its methods
-			rootCmd := NewRootCommand()
+			// Use the provided root command instead of creating a new one
 			cfg, log, styles, err := rootCmd.LoadLoggerAndConfig()
 			if err != nil {
 				fmt.Printf("Error initializing: %v\n", err)
@@ -82,6 +82,7 @@ By default, both Zig and ZLS will be installed unless --zig-only or --zls-only i
 	return &InstallCommand{
 		cmd:     installCmd,
 		options: options,
+		rootCmd: rootCmd, // Set the root command reference
 	}
 }
 

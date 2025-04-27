@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/logger"
@@ -45,38 +46,8 @@ func NewRootCommand() *RootCommand {
 		Long: `A tool to install Zig and ZLS (Zig Language Server).
 This program must be run as root or with sudo.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Initialize Viper with the command's viper instance
-			v := viper.GetViper()
-
-			// Bind config flags to viper and ignore any errors since we have defaults
-			_ = v.BindPFlag("zig_only", cmd.PersistentFlags().Lookup("zig-only"))
-			_ = v.BindPFlag("zls_only", cmd.PersistentFlags().Lookup("zls-only"))
-			_ = v.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose"))
-			_ = v.BindPFlag("no_color", cmd.PersistentFlags().Lookup("no-color"))
-			_ = v.BindPFlag("generate_env", cmd.PersistentFlags().Lookup("generate-env"))
-			_ = v.BindPFlag("show_settings", cmd.PersistentFlags().Lookup("settings"))
-			_ = v.BindPFlag("log_file", cmd.PersistentFlags().Lookup("log-file"))
-			_ = v.BindPFlag("enable_log", cmd.PersistentFlags().Lookup("enable-log"))
-
-			// Set config file if provided
-			if options.CfgFile != "" {
-				v.SetConfigFile(options.CfgFile)
-			} else {
-				// Look for .env in the current directory
-				v.SetConfigFile(".env")
-			}
-
-			// Read in environment variables with prefix
-			v.SetEnvPrefix("ZIG_INSTALL")
-			v.AutomaticEnv()
-
-			// Load the config file if it exists
-			if err := v.ReadInConfig(); err == nil {
-				if options.Verbose {
-					fmt.Println("Using config file:", v.ConfigFileUsed())
-				}
-			}
-
+			// Check for environment variables with ZIG_INSTALL prefix and apply them
+			processEnvVars(options)
 			return nil
 		},
 	}
@@ -99,7 +70,40 @@ This program must be run as root or with sudo.`,
 	return &RootCommand{
 		cmd:       rootCmd,
 		options:   options,
-		viperInst: viper.GetViper(),
+		viperInst: viper.New(),
+	}
+}
+
+// processEnvVars checks for environment variables with ZIG_INSTALL prefix and applies them to options
+func processEnvVars(options *CommandOptions) {
+	// Check for ZIG_INSTALL environment variables and apply them to options
+	// Note: .env file's specific values (ZIG_DIR, etc.) are handled by Viper, not here
+	if val := os.Getenv("ZIG_INSTALL_ZIG_ONLY"); val == "true" || val == "1" {
+		options.ZigOnly = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_ZLS_ONLY"); val == "true" || val == "1" {
+		options.ZlsOnly = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_VERBOSE"); val == "true" || val == "1" {
+		options.Verbose = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_NO_COLOR"); val == "true" || val == "1" {
+		options.NoColor = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_GENERATE_ENV"); val == "true" || val == "1" {
+		options.GenerateEnv = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_SHOW_SETTINGS"); val == "true" || val == "1" {
+		options.ShowSettings = true
+	}
+	if val := os.Getenv("ZIG_INSTALL_LOG_FILE"); val != "" {
+		options.LogFile = val
+	}
+	if val := os.Getenv("ZIG_INSTALL_ENABLE_LOG"); strings.ToLower(val) == "false" || val == "0" {
+		options.EnableLog = false
+	}
+	if val := os.Getenv("ZIG_INSTALL_ENV"); val != "" {
+		options.CfgFile = val
 	}
 }
 
@@ -119,8 +123,8 @@ func Execute() {
 
 // AddCommands adds all child commands to the root command
 func (rc *RootCommand) AddCommands() {
-	// Add install command
-	rc.cmd.AddCommand(NewInstallCommand(rc.options).cmd)
+	// Add install command and pass this root command instance
+	rc.cmd.AddCommand(NewInstallCommand(rc.options, rc).cmd)
 
 	// Add version command
 	rc.cmd.AddCommand(NewVersionCommand().cmd)
@@ -130,14 +134,17 @@ func (rc *RootCommand) AddCommands() {
 
 // LoadLoggerAndConfig prepares the logger and config for commands
 func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, *tui.Styles, error) {
-	// Initialize Viper and load configuration
+	// Initialize a fresh Viper instance that will ONLY handle .env file settings
 	v := config.InitViper()
-	cfg, err := config.LoadConfig(v, rc.options.CfgFile)
+
+	// Load only .env configurable settings using Viper
+	cfg, err := config.LoadEnvConfig(v, rc.options.CfgFile)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to load configuration: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to load .env configuration: %w", err)
 	}
 
-	// Override config with CLI flags
+	// Set all Cobra-managed config values from command-line flags
+	cfg.EnvFile = rc.options.CfgFile
 	cfg.ZigOnly = rc.options.ZigOnly
 	cfg.ZLSOnly = rc.options.ZlsOnly
 	cfg.Verbose = rc.options.Verbose

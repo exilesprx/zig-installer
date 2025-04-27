@@ -21,12 +21,15 @@ var (
 
 // Config contains the application configuration
 type Config struct {
-	ZigDir       string
-	ZLSDir       string
-	BinDir       string
-	ZigPubKey    string
-	ZigDownURL   string
-	ZigIndexURL  string
+	// .env configurable values (via Viper)
+	ZigDir      string
+	ZLSDir      string
+	BinDir      string
+	ZigPubKey   string
+	ZigDownURL  string
+	ZigIndexURL string
+
+	// CLI options and flags (via Cobra)
 	EnvFile      string
 	ZigOnly      bool
 	ZLSOnly      bool
@@ -41,43 +44,42 @@ type Config struct {
 // NewConfig creates a new configuration with default values
 func NewConfig() *Config {
 	return &Config{
+		// Default values for .env configurable settings
 		ZigDir:      "/opt/zig",
 		ZLSDir:      "/opt/zls",
 		BinDir:      "/usr/local/bin",
-		ZigPubKey:   DefaultZigPubKey,   // Use the linker-configurable default
-		ZigDownURL:  DefaultZigDownURL,  // Use the linker-configurable default
-		ZigIndexURL: DefaultZigIndexURL, // Use the linker-configurable default
-		EnvFile:     ".env",
-		Verbose:     false,
-		LogFile:     "zig-install.log",
-		EnableLog:   true,
+		ZigPubKey:   DefaultZigPubKey,
+		ZigDownURL:  DefaultZigDownURL,
+		ZigIndexURL: DefaultZigIndexURL,
+
+		// Default values for CLI options
+		EnvFile:   ".env",
+		Verbose:   false,
+		LogFile:   "zig-install.log",
+		EnableLog: true,
 	}
 }
 
-// InitViper initializes Viper with config values
+// InitViper initializes Viper with only the .env configurable values
 func InitViper() *viper.Viper {
 	v := viper.New()
 
-	// Set default values
+	// Set default values for .env configurable settings only
 	v.SetDefault("zig_dir", "/opt/zig")
 	v.SetDefault("zls_dir", "/opt/zls")
 	v.SetDefault("bin_dir", "/usr/local/bin")
-	v.SetDefault("zig_pub_key", DefaultZigPubKey)     // Use the linker-configurable default
-	v.SetDefault("zig_down_url", DefaultZigDownURL)   // Use the linker-configurable default
-	v.SetDefault("zig_index_url", DefaultZigIndexURL) // Use the linker-configurable default
-	v.SetDefault("verbose", false)
-	v.SetDefault("log_file", "zig-install.log")
-	v.SetDefault("enable_log", true)
-
-	// Set environment variable prefix
-	v.SetEnvPrefix("ZIG_INSTALL")
-	v.AutomaticEnv()
+	v.SetDefault("zig_pub_key", DefaultZigPubKey)
+	v.SetDefault("zig_down_url", DefaultZigDownURL)
+	v.SetDefault("zig_index_url", DefaultZigIndexURL)
 
 	return v
 }
 
-// LoadConfig loads configuration from environment file and environment variables
-func LoadConfig(v *viper.Viper, envFile string) (*Config, error) {
+// LoadEnvConfig loads only the .env configurable settings using Viper
+func LoadEnvConfig(v *viper.Viper, envFile string) (*Config, error) {
+	// Start with default configuration
+	config := NewConfig()
+
 	if envFile != "" {
 		// Check if the env file exists
 		if _, err := os.Stat(envFile); err == nil {
@@ -85,33 +87,37 @@ func LoadConfig(v *viper.Viper, envFile string) (*Config, error) {
 			if err := v.ReadInConfig(); err != nil {
 				return nil, fmt.Errorf("error reading config file: %w", err)
 			}
+
+			// Only override the six specific values if they are set in the .env file
+			if v.IsSet("zig_dir") {
+				config.ZigDir = v.GetString("zig_dir")
+			}
+			if v.IsSet("zls_dir") {
+				config.ZLSDir = v.GetString("zls_dir")
+			}
+			if v.IsSet("bin_dir") {
+				config.BinDir = v.GetString("bin_dir")
+			}
+			if v.IsSet("zig_pub_key") {
+				config.ZigPubKey = v.GetString("zig_pub_key")
+			}
+			if v.IsSet("zig_down_url") {
+				config.ZigDownURL = v.GetString("zig_down_url")
+			}
+			if v.IsSet("zig_index_url") {
+				config.ZigIndexURL = v.GetString("zig_index_url")
+			}
 		}
 	}
 
-	config := &Config{
-		ZigDir:       v.GetString("zig_dir"),
-		ZLSDir:       v.GetString("zls_dir"),
-		BinDir:       v.GetString("bin_dir"),
-		ZigPubKey:    v.GetString("zig_pub_key"),
-		ZigDownURL:   v.GetString("zig_down_url"),
-		ZigIndexURL:  v.GetString("zig_index_url"),
-		EnvFile:      envFile,
-		ZigOnly:      v.GetBool("zig_only"),
-		ZLSOnly:      v.GetBool("zls_only"),
-		NoColor:      v.GetBool("no_color"),
-		Verbose:      v.GetBool("verbose"),
-		LogFile:      v.GetString("log_file"),
-		EnableLog:    v.GetBool("enable_log"),
-		GenerateEnv:  v.GetBool("generate_env"),
-		ShowSettings: v.GetBool("show_settings"),
-	}
+	// The rest of the config values should be set by Cobra, not here
 
 	return config, nil
 }
 
-// GenerateEnvFile creates a template .env file with default values
+// GenerateEnvFile creates a template .env file with only the six specific values
 func (c *Config) GenerateEnvFile() error {
-	// Default configuration values
+	// Only include the six specific values in the .env file
 	defaults := []string{
 		"# Zig & ZLS Installer Configuration",
 		"# Directories",
