@@ -75,9 +75,6 @@ This program must be run as root or with sudo.`,
 				if options.Verbose {
 					fmt.Println("Using config file:", v.ConfigFileUsed())
 				}
-			} else if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-				// Config file was found but another error was produced
-				return fmt.Errorf("error reading config file: %w", err)
 			}
 
 			return nil
