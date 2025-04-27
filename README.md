@@ -108,7 +108,7 @@ When building from source, you can also customize some defaults using linker fla
 go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=YOUR_KEY'"
 ```
 
-The justfile in this project automatically reads a `zig.pub.key` file if present and sets it as the default public key during build. This is useful when:
+The justfile in this project automatically reads the `ZIG_PUB_KEY` from the `.env` file if present and sets it as the default public key during build. This is useful when:
 
 1. You need to use a custom or alternate signing key for Zig binaries
 2. The upstream Zig project rotates their signing keys and the hardcoded default is outdated
@@ -129,7 +129,7 @@ Install only Zig:
 sudo ./zig-install-linux-amd64 install --zig-only
 ```
 
-Install only ZLS (Zig Language Server):  
+Install only ZLS (Zig Language Server):
 _Note: You must have Zig installed in order to compile ZLS._
 
 ```bash
