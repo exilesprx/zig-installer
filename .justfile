@@ -12,8 +12,7 @@ _setup:
   VERSION=$(git describe --exact-match --tags 2>/dev/null || echo "$(git rev-parse --short=12 HEAD)-dev")
   COMMIT=$(git rev-parse HEAD)
   DATE=$(date)
-  KEY=$(cat zig.pub.key 2>/dev/null || echo "")
-  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$KEY'"
+  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_PUB_KEY'"
 
 # Display available commands
 help:
