@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/logger"
@@ -78,33 +77,13 @@ This program must be run as root or with sudo.`,
 func processEnvVars(options *CommandOptions) {
 	// Check for ZIG_INSTALL environment variables and apply them to options
 	// Note: .env file's specific values (ZIG_DIR, etc.) are handled by Viper, not here
-	if val := os.Getenv("ZIG_INSTALL_ZIG_ONLY"); val == "true" || val == "1" {
-		options.ZigOnly = true
-	}
-	if val := os.Getenv("ZIG_INSTALL_ZLS_ONLY"); val == "true" || val == "1" {
-		options.ZlsOnly = true
-	}
-	if val := os.Getenv("ZIG_INSTALL_VERBOSE"); val == "true" || val == "1" {
-		options.Verbose = true
-	}
-	if val := os.Getenv("ZIG_INSTALL_NO_COLOR"); val == "true" || val == "1" {
-		options.NoColor = true
-	}
-	if val := os.Getenv("ZIG_INSTALL_GENERATE_ENV"); val == "true" || val == "1" {
-		options.GenerateEnv = true
-	}
-	if val := os.Getenv("ZIG_INSTALL_SHOW_SETTINGS"); val == "true" || val == "1" {
-		options.ShowSettings = true
-	}
 	if val := os.Getenv("ZIG_INSTALL_LOG_FILE"); val != "" {
 		options.LogFile = val
-	}
-	if val := os.Getenv("ZIG_INSTALL_ENABLE_LOG"); strings.ToLower(val) == "false" || val == "0" {
-		options.EnableLog = false
 	}
 	if val := os.Getenv("ZIG_INSTALL_ENV"); val != "" {
 		options.CfgFile = val
 	}
+	// TODO: clean up the environment variables, vs .env, vs build values. right now they're a mess
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

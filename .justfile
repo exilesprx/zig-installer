@@ -1,3 +1,5 @@
+#!/usr/bin/env just --justfile
+
 default: help
 
 # Common build variables - using Just's variable support
@@ -12,7 +14,9 @@ _setup:
   VERSION=$(git describe --exact-match --tags 2>/dev/null || echo "$(git rev-parse --short=12 HEAD)-dev")
   COMMIT=$(git rev-parse HEAD)
   DATE=$(date)
-  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_PUB_KEY'"
+  # Use environment variable directly or fall back to default if not set
+  ZIG_KEY=${ZIG_PUB_KEY:-"RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"}
+  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_KEY'"
 
 # Display available commands
 help:

@@ -70,18 +70,8 @@ All environment variables must be prefixed with `ZIG_INSTALL_`. For example, `ZI
 
 | Environment Variable     | Description                                  | Default Value                                           |
 |--------------------------|----------------------------------------------|---------------------------------------------------------|
-| `ZIG_DIR`                | Directory to install Zig                     | `/opt/zig`                                              |
-| `ZLS_DIR`                | Directory to install ZLS                     | `/opt/zls`                                              |
-| `BIN_DIR`                | Directory for symlinks                       | `/usr/local/bin`                                        |
-| `ZIG_PUB_KEY`            | Minisign public key to verify Zig download   | `RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U` |
-| `ZIG_DOWN_URL`           | Base URL for Zig downloads                   | `https://ziglang.org/builds/`                           |
-| `ZIG_INDEX_URL`          | URL for Zig version index                    | `https://ziglang.org/download/index.json`               |
-| `ZIG_ONLY`               | Install only Zig (boolean)                   | `false`                                                 |
-| `ZLS_ONLY`               | Install only ZLS (boolean)                   | `false`                                                 |
-| `VERBOSE`                | Show detailed output (boolean)               | `false`                                                 |
-| `NO_COLOR`               | Disable colored output (boolean)             | `false`                                                 |
+| `ENV`                    | File to override defaults                    | `.env`                                                 |
 | `LOG_FILE`               | File to log errors to                        | `zig-install.log`                                       |
-| `ENABLE_LOG`             | Enable logging to file (boolean)             | `true`                                                  |
 
 ### Configuration File (.env)
 
