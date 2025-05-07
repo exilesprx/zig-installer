@@ -36,13 +36,14 @@ just build
 ## Usage
 
 ```bash
-sudo ./zig-install [command] [OPTIONS]
+sudo ./zig-install-{platform}-{arch} [command] [OPTIONS]
 ```
 
 ### Commands
 
 - `install`: Install Zig and/or ZLS (default if no command specified)
 - `version`: Show version information about the installer
+- `env`: Generate a template .env file
 
 ### Options
 
@@ -51,7 +52,6 @@ sudo ./zig-install [command] [OPTIONS]
 - `--verbose`: Show detailed output during installation
 - `--no-color`: Disable colored output
 - `--env <file>`: Specify a custom environment file (default: `.env`)
-- `--generate-env`: Generate a template .env file
 - `--settings`: Show current settings
 - `--log-file <file>`: Specify log file (default: `zig-install.log`)
 - `--enable-log`: Enable/disable logging to file
@@ -65,7 +65,7 @@ This program can be configured in two ways (in order of precedence):
 
 ### Configuration File (.env)
 
-You can create a `.env` file in the same directory as the executable or use the `--generate-env` flag to create a template:
+You can create a `.env` file in the same directory as the executable or use the `env` command to create a template:
 
 ```
 # Zig & ZLS Installer Configuration
@@ -82,6 +82,11 @@ ZIG_INDEX_URL=https://ziglang.org/download/index.json
 
 The values override the defaults. Please ensure the paths are correct for your system.
 
+Creating a `.env` file is optional, but it allows for easy customization without modifying the source code. It allows you to update settings in the event of:
+
+1. The upstream Zig project rotates their signing keys and the hardcoded default is outdated
+2. The upstream Zig project has moved to a new download URL
+
 ### Build-time Configuration (Linker Flags)
 
 When building from source, you can also customize some defaults using linker flags:
@@ -90,10 +95,7 @@ When building from source, you can also customize some defaults using linker fla
 go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=YOUR_KEY'"
 ```
 
-The justfile in this project automatically reads the `ZIG_PUB_KEY` from the `.env` file and sets it as the default public key during build. This is useful when:
-
-1. You need to use a custom or alternate signing key for Zig binaries
-2. The upstream Zig project rotates their signing keys and the hardcoded default is outdated
+The justfile in this project automatically reads from the `.env` file and sets the defaults during build.
 
 ## Examples
 
