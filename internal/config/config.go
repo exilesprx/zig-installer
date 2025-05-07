@@ -9,14 +9,35 @@ import (
 
 // Build-time configurable defaults that can be set with linker flags
 var (
-	// DefaultZigPubKey can be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=key'"
-	DefaultZigPubKey = "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
+	// DefaultZigPubKey must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=key'"
+	DefaultZigPubKey string
 
-	// DefaultZigDownURL can be set with linker flags if needed
-	DefaultZigDownURL = "https://ziglang.org/builds/"
+	// DefaultZigDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigDir=/custom/path'"
+	DefaultZigDir string
 
-	// DefaultZigIndexURL can be set with linker flags if needed
-	DefaultZigIndexURL = "https://ziglang.org/download/index.json"
+	// DefaultZLSDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZLSDir=/custom/path'"
+	DefaultZLSDir string
+
+	// DefaultBinDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultBinDir=/custom/path'"
+	DefaultBinDir string
+
+	// DefaultZigDownURL must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigDownURL=url'"
+	DefaultZigDownURL string
+
+	// DefaultZigIndexURL must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigIndexURL=url'"
+	DefaultZigIndexURL string
+
+	// DefaultEnvFile the default name of the environment file
+	DefaultEnvFile = ".env"
+
+	// DefaultVerbose the default verbosity level
+	DefaultVerbose = false
+
+	// DefaultLogFile the default log file name
+	DefaultLogFile = "zig-install.log"
+
+	// DefaultEnableLog the default log enable flag
+	DefaultEnableLog = false
 )
 
 // Config contains the application configuration
@@ -45,18 +66,18 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		// Default values for .env configurable settings
-		ZigDir:      "/opt/zig",
-		ZLSDir:      "/opt/zls",
-		BinDir:      "/usr/local/bin",
+		ZigDir:      DefaultZigDir,
+		ZLSDir:      DefaultZLSDir,
+		BinDir:      DefaultBinDir,
 		ZigPubKey:   DefaultZigPubKey,
 		ZigDownURL:  DefaultZigDownURL,
 		ZigIndexURL: DefaultZigIndexURL,
 
 		// Default values for CLI options
-		EnvFile:   ".env",
-		Verbose:   false,
-		LogFile:   "zig-install.log",
-		EnableLog: true,
+		EnvFile:   DefaultEnvFile,
+		Verbose:   DefaultVerbose,
+		LogFile:   DefaultLogFile,
+		EnableLog: DefaultEnableLog,
 	}
 }
 
@@ -65,9 +86,9 @@ func InitViper() *viper.Viper {
 	v := viper.New()
 
 	// Set default values for .env configurable settings only
-	v.SetDefault("zig_dir", "/opt/zig")
-	v.SetDefault("zls_dir", "/opt/zls")
-	v.SetDefault("bin_dir", "/usr/local/bin")
+	v.SetDefault("zig_dir", DefaultZigDir)
+	v.SetDefault("zls_dir", DefaultZLSDir)
+	v.SetDefault("bin_dir", DefaultBinDir)
 	v.SetDefault("zig_pub_key", DefaultZigPubKey)
 	v.SetDefault("zig_down_url", DefaultZigDownURL)
 	v.SetDefault("zig_index_url", DefaultZigIndexURL)
