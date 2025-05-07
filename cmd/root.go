@@ -18,7 +18,6 @@ type CommandOptions struct {
 	ZlsOnly      bool
 	Verbose      bool
 	NoColor      bool
-	GenerateEnv  bool
 	ShowSettings bool
 	LogFile      string
 	EnableLog    bool
@@ -49,7 +48,6 @@ This program must be run as root or with sudo.`,
 
 	// Configuration flags
 	rootCmd.PersistentFlags().StringVar(&options.CfgFile, "env", ".env", "Path to environment file")
-	rootCmd.PersistentFlags().BoolVar(&options.GenerateEnv, "generate-env", false, "Generate a template .env file")
 	rootCmd.PersistentFlags().BoolVar(&options.ShowSettings, "settings", false, "Show current settings")
 	rootCmd.PersistentFlags().BoolVar(&options.NoColor, "no-color", false, "Disable colored output")
 
@@ -86,7 +84,8 @@ func (rc *RootCommand) AddCommands() {
 	// Add version command
 	rc.cmd.AddCommand(NewVersionCommand().cmd)
 
-	// Add other commands as needed
+	// Add env command
+	rc.cmd.AddCommand(NewEnvCommand(rc.options, rc).cmd)
 }
 
 // LoadLoggerAndConfig prepares the logger and config for commands
@@ -106,7 +105,6 @@ func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, *t
 	cfg.ZLSOnly = rc.options.ZlsOnly
 	cfg.Verbose = rc.options.Verbose
 	cfg.NoColor = rc.options.NoColor
-	cfg.GenerateEnv = rc.options.GenerateEnv
 	cfg.ShowSettings = rc.options.ShowSettings
 	cfg.LogFile = rc.options.LogFile
 	cfg.EnableLog = rc.options.EnableLog
