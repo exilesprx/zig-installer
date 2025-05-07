@@ -33,22 +33,13 @@ type RootCommand struct {
 
 // NewRootCommand creates a new instance of the root command
 func NewRootCommand() *RootCommand {
-	options := &CommandOptions{
-		CfgFile:   ".env",
-		LogFile:   "zig-install.log",
-		EnableLog: true,
-	}
+	options := &CommandOptions{}
 
 	rootCmd := &cobra.Command{
 		Use:   "zig-install",
 		Short: "Install Zig and ZLS (Zig Language Server)",
 		Long: `A tool to install Zig and ZLS (Zig Language Server).
 This program must be run as root or with sudo.`,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Check for environment variables with ZIG_INSTALL prefix and apply them
-			processEnvVars(options)
-			return nil
-		},
 	}
 
 	// Main flags - moved to PersistentFlags so they're available to subcommands
@@ -71,19 +62,6 @@ This program must be run as root or with sudo.`,
 		options:   options,
 		viperInst: viper.New(),
 	}
-}
-
-// processEnvVars checks for environment variables with ZIG_INSTALL prefix and applies them to options
-func processEnvVars(options *CommandOptions) {
-	// Check for ZIG_INSTALL environment variables and apply them to options
-	// Note: .env file's specific values (ZIG_DIR, etc.) are handled by Viper, not here
-	if val := os.Getenv("ZIG_INSTALL_LOG_FILE"); val != "" {
-		options.LogFile = val
-	}
-	if val := os.Getenv("ZIG_INSTALL_ENV"); val != "" {
-		options.CfgFile = val
-	}
-	// TODO: clean up the environment variables, vs .env, vs build values. right now they're a mess
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

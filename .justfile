@@ -1,5 +1,7 @@
 #!/usr/bin/env just --justfile
 
+set dotenv-load
+
 default: help
 
 # Common build variables - using Just's variable support
@@ -15,17 +17,16 @@ _setup:
   COMMIT=$(git rev-parse HEAD)
   DATE=$(date)
   # Use environment variable directly or fall back to default if not set
-  ZIG_KEY=${ZIG_PUB_KEY:-"RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"}
-  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_KEY'"
+  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_PUB_KEY' -X '{{config_package}}.DefaultZigDir=$ZIG_DIR' -X '{{config_package}}.DefaultZLSDir=$ZLS_DIR' -X '{{config_package}}.DefaultBinDir=$BIN_DIR' -X '{{config_package}}.DefaultZigDownURL=$ZIG_DOWN_URL' -X '{{config_package}}.DefaultZigIndexURL=$ZIG_INDEX_URL'"
 
 # Display available commands
 help:
   @echo "Available commands:"
   @echo "  build                   - Build for current platform"
   @echo "  build-all               - Build for all platforms (linux, windows, mac)"
-  @echo "  build-linux             - Build for Linux (amd64, arm64)"
-  @echo "  build-windows           - Build for Windows (amd64, arm64)"
-  @echo "  build-mac               - Build for macOS (amd64, arm64)"
+  @echo "  build-linux             - Build for Linux (amd64)"
+  @echo "  build-windows           - Build for Windows (amd64)"
+  @echo "  build-mac               - Build for macOS (amd64)"
 
 # Build for current platform
 build:
@@ -44,16 +45,13 @@ build-all: build-linux build-windows build-mac
 # Build for Linux
 build-linux:
   @just _build linux amd64
-  @just _build linux arm64
 
 # Build for Windows
 build-windows:
   # TODO: Update .env file to include the correct paths for Windows
   @just _build windows amd64 .exe
-  @just _build windows arm64 .exe
 
 # Build for macOS (using darwin as the OS name)
 build-mac:
   # TODO: Update .env file to include the correct paths for macOS
   @just _build darwin amd64
-  @just _build darwin arm64

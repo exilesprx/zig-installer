@@ -58,20 +58,10 @@ sudo ./zig-install [command] [OPTIONS]
 
 ## Configuration
 
-This program can be configured in three ways (in order of precedence):
+This program can be configured in two ways (in order of precedence):
 
 1. **Command-line flags**: Options provided directly when running the program
-2. **Environment variables**: Variables with the prefix `ZIG_INSTALL_`
-3. **Configuration file**: Settings in an `.env` file
-
-### Available Environment Variables
-
-All environment variables must be prefixed with `ZIG_INSTALL_`. For example, `ZIG_INSTALL_ZIG_DIR=/custom/path`.
-
-| Environment Variable     | Description                                  | Default Value                                           |
-|--------------------------|----------------------------------------------|---------------------------------------------------------|
-| `ENV`                    | File to override defaults                    | `.env`                                                 |
-| `LOG_FILE`               | File to log errors to                        | `zig-install.log`                                       |
+2. **Configuration file**: Settings in an `.env` file
 
 ### Configuration File (.env)
 
@@ -90,6 +80,8 @@ ZIG_DOWN_URL=https://ziglang.org/builds/
 ZIG_INDEX_URL=https://ziglang.org/download/index.json
 ```
 
+The values override the defaults. Please ensure the paths are correct for your system.
+
 ### Build-time Configuration (Linker Flags)
 
 When building from source, you can also customize some defaults using linker flags:
@@ -98,12 +90,10 @@ When building from source, you can also customize some defaults using linker fla
 go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=YOUR_KEY'"
 ```
 
-The justfile in this project automatically reads the `ZIG_PUB_KEY` from the `.env` file if present and sets it as the default public key during build. This is useful when:
+The justfile in this project automatically reads the `ZIG_PUB_KEY` from the `.env` file and sets it as the default public key during build. This is useful when:
 
 1. You need to use a custom or alternate signing key for Zig binaries
 2. The upstream Zig project rotates their signing keys and the hardcoded default is outdated
-3. You're in an air-gapped environment and need to verify Zig binaries against your organization's key
-4. You're building a custom distribution of the installer with your own verification key
 
 ## Examples
 
