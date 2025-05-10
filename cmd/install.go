@@ -30,7 +30,8 @@ func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCo
 By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use the provided root command instead of creating a new one
-			cfg, log, styles, err := rootCmd.LoadLoggerAndConfig()
+			cfg, log, err := rootCmd.LoadLoggerAndConfig()
+			styles := tui.LoadStyles()
 			if err != nil {
 				fmt.Printf("Error initializing: %v\n", err)
 				os.Exit(1)

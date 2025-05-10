@@ -6,7 +6,6 @@ import (
 
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/logger"
-	"github.com/exilesprx/zig-install/internal/tui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -89,14 +88,14 @@ func (rc *RootCommand) AddCommands() {
 }
 
 // LoadLoggerAndConfig prepares the logger and config for commands
-func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, *tui.Styles, error) {
+func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, error) {
 	// Initialize a fresh Viper instance that will ONLY handle .env file settings
 	v := config.InitViper()
 
 	// Load only .env configurable settings using Viper
 	cfg, err := config.LoadEnvConfig(v, rc.options.CfgFile)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to load .env configuration: %w", err)
+		return nil, nil, fmt.Errorf("failed to load .env configuration: %w", err)
 	}
 
 	// Set all Cobra-managed config values from command-line flags
@@ -112,12 +111,8 @@ func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, *t
 	// Initialize logger
 	log, err := logger.NewFileLogger(cfg.LogFile, cfg.EnableLog)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to initialize logger: %w", err)
+		return nil, nil, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
-	// Initialize styles
-	colors := tui.NewMochaColors()
-	styles := tui.NewStyles(colors)
-
-	return cfg, log, styles, nil
+	return cfg, log, nil
 }
