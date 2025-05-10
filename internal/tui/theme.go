@@ -118,6 +118,13 @@ func NewStyles(colors *Colors) *Styles {
 	}
 }
 
+// LoadStyles initializes and returns a new Styles instance
+func LoadStyles() *Styles {
+	colors := NewMochaColors()
+	styles := NewStyles(colors)
+	return styles
+}
+
 // PrintWithStyles formats a message with styled output if colors are enabled
 func PrintWithStyles(message string, style lipgloss.Style, noColor bool) string {
 	if noColor {
