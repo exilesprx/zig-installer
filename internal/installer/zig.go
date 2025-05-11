@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,22 +17,67 @@ import (
 	"github.com/exilesprx/zig-install/internal/tui"
 )
 
+// ZigBuildInfo represents information about a specific Zig build
+type ZigBuildInfo struct {
+	Tarball string `json:"tarball"`
+	Shasum  string `json:"shasum"`
+	Size    string `json:"size"`
+}
+
 // ZigJSON represents the JSON response from ziglang.org/download/index.json
 type ZigJSON struct {
 	Master struct {
-		Version string `json:"version"`
+		Version      string       `json:"version"`
+		Date         string       `json:"date"`
+		Docs         string       `json:"docs"`
+		StdDocs      string       `json:"stdDocs"`
+		Src          ZigBuildInfo `json:"src"`
+		Bootstrap    ZigBuildInfo `json:"bootstrap"`
+		X86_64MacOS  ZigBuildInfo `json:"x86_64-macos"`
+		Aarch64MacOS ZigBuildInfo `json:"aarch64-macos"`
+		X86_64Linux  ZigBuildInfo `json:"x86_64-linux"`
+		Aarch64Linux ZigBuildInfo `json:"aarch64-linux"`
 	} `json:"master"`
+}
+
+// getPlatformBuildInfo returns the appropriate build info for the current platform
+func getPlatformBuildInfo(zigJSON *ZigJSON) (*ZigBuildInfo, error) {
+	arch := runtime.GOARCH
+	switch runtime.GOOS {
+	case "darwin":
+		switch arch {
+		case "amd64":
+			return &zigJSON.Master.X86_64MacOS, nil
+		case "arm64":
+			return &zigJSON.Master.Aarch64MacOS, nil
+		}
+	case "linux":
+		switch arch {
+		case "amd64":
+			return &zigJSON.Master.X86_64Linux, nil
+		case "arm64":
+			return &zigJSON.Master.Aarch64Linux, nil
+		}
+	}
+	return nil, fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, arch)
 }
 
 // InstallZig handles the Zig installation process
 func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (string, error) {
-	// Get the latest version
+	// Get the latest version info
 	p.Send(tui.StatusMsg("Fetching latest Zig version..."))
-	version, err := getLatestZigVersion(config.ZigIndexURL)
+	zigJSON, err := getLatestZigVersion(config.ZigIndexURL)
+	version := zigJSON.Master.Version
 	if err != nil {
 		return "", err
 	}
 	p.Send(tui.StatusMsg(fmt.Sprintf("Found latest Zig version: %s", version)))
+
+	// Get platform-specific build info
+	buildInfo, err := getPlatformBuildInfo(zigJSON)
+	if err != nil {
+		return "", err
+	}
 
 	// Check if already installed
 	if isZigInstalled(version) {
@@ -67,17 +113,18 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (s
 	}
 
 	// Download Zig
-	tarFile := fmt.Sprintf("zig-linux-x86_64-%s.tar.xz", version)
+	tarURL := buildInfo.Tarball
+	tarFile := filepath.Base(tarURL)
 	tarPath := filepath.Join(config.ZigDir, tarFile)
 	sigPath := tarPath + ".minisig"
 
 	p.Send(tui.StatusMsg(fmt.Sprintf("Downloading Zig %s...", version)))
 
 	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading from %s to %s", config.ZigDownURL+tarFile, tarPath)))
+		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading from %s to %s", tarURL, tarPath)))
 	}
 
-	cmd := exec.Command("wget", "-O", tarPath, config.ZigDownURL+tarFile)
+	cmd := exec.Command("wget", "-O", tarPath, tarURL)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		if config.Verbose {
 			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error downloading: %s", output)))
@@ -90,10 +137,10 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (s
 	// Download signature
 	p.Send(tui.StatusMsg("Downloading Zig signature..."))
 	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading signature from %s to %s", config.ZigDownURL+tarFile+".minisig", sigPath)))
+		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading signature from %s.minisig to %s", tarURL, sigPath)))
 	}
 
-	cmd = exec.Command("wget", "-O", sigPath, config.ZigDownURL+tarFile+".minisig")
+	cmd = exec.Command("wget", "-O", sigPath, tarURL+".minisig")
 	if output, err := cmd.CombinedOutput(); err != nil {
 		if config.Verbose {
 			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error downloading signature: %s", output)))
@@ -146,8 +193,11 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (s
 	// Remove tar file after extraction
 	os.Remove(tarPath)
 
+	// The extracted directory name is the same as the tarball name without the .tar.xz extension
+	extractedDir := strings.TrimSuffix(tarFile, ".tar.xz")
+
 	// Create symbolic link
-	zigBinPath := filepath.Join(config.ZigDir, fmt.Sprintf("zig-linux-x86_64-%s", version), "zig")
+	zigBinPath := filepath.Join(config.ZigDir, extractedDir, "zig")
 	linkPath := filepath.Join(config.BinDir, "zig")
 
 	p.Send(tui.StatusMsg("Creating symbolic link..."))
@@ -165,31 +215,29 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (s
 	return version, nil
 }
 
-// Helper functions
-
-// getLatestZigVersion fetches the latest version from ziglang.org
-func getLatestZigVersion(zigIndexURL string) (string, error) {
+// getLatestZigVersion fetches the latest version information from ziglang.org
+func getLatestZigVersion(zigIndexURL string) (*ZigJSON, error) {
 	resp, err := http.Get(zigIndexURL)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var zigJSON ZigJSON
 	if err := json.Unmarshal(body, &zigJSON); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if zigJSON.Master.Version == "" {
-		return "", fmt.Errorf("could not determine latest Zig version")
+		return nil, fmt.Errorf("could not determine latest Zig version")
 	}
 
-	return zigJSON.Master.Version, nil
+	return &zigJSON, nil
 }
 
 // isZigInstalled checks if the specified version is already installed
