@@ -9,6 +9,10 @@ const (
 	defaultZigPubKey   = "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
 	defaultZigDownURL  = "https://ziglang.org/builds/"
 	defaultZigIndexURL = "https://ziglang.org/download/index.json"
+	defaultEnvFile     = ".env"
+	defaultVerbose     = false
+	defaultLogFile     = "zig-install.log"
+	defaultEnableLog   = false
 )
 
 // DefaultConfig contains the default configuration values
@@ -19,6 +23,10 @@ type DefaultConfig struct {
 	ZigPubKey   string
 	ZigDownURL  string
 	ZigIndexURL string
+	EnvFile     string
+	Verbose     bool
+	LogFile     string
+	EnableLog   bool
 }
 
 // getPlatformPaths returns the platform-specific paths
@@ -46,5 +54,9 @@ func GetDefaults() *DefaultConfig {
 		ZigPubKey:   defaultZigPubKey,
 		ZigDownURL:  defaultZigDownURL,
 		ZigIndexURL: defaultZigIndexURL,
+		EnvFile:     defaultEnvFile,
+		Verbose:     defaultVerbose,
+		LogFile:     defaultLogFile,
+		EnableLog:   defaultEnableLog,
 	}
 }

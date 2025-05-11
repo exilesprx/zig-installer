@@ -7,20 +7,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	// DefaultEnvFile the default name of the environment file
-	DefaultEnvFile = ".env"
-
-	// DefaultVerbose the default verbosity level
-	DefaultVerbose = false
-
-	// DefaultLogFile the default log file name
-	DefaultLogFile = "zig-install.log"
-
-	// DefaultEnableLog the default log enable flag
-	DefaultEnableLog = false
-)
-
 // Config contains the application configuration
 type Config struct {
 	// .env configurable values (via Viper)
@@ -56,10 +42,10 @@ func NewConfig() *Config {
 		ZigIndexURL: defaults.ZigIndexURL,
 
 		// Default values for CLI options
-		EnvFile:   DefaultEnvFile,
-		Verbose:   DefaultVerbose,
-		LogFile:   DefaultLogFile,
-		EnableLog: DefaultEnableLog,
+		EnvFile:   defaults.EnvFile,
+		Verbose:   defaults.Verbose,
+		LogFile:   defaults.LogFile,
+		EnableLog: defaults.EnableLog,
 	}
 }
 
