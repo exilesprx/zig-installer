@@ -16,18 +16,25 @@ import (
 
 // InstallCommand encapsulates the install command
 type InstallCommand struct {
-	cmd     *cobra.Command
-	options *CommandOptions
-	rootCmd *RootCommand // Add reference to root command
+	cmd        *cobra.Command
+	options    *CommandOptions
+	rootCmd    *RootCommand
+	zigVersion string
 }
 
 // NewInstallCommand creates a new install command instance
 func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCommand {
+	ic := &InstallCommand{
+		options: options,
+		rootCmd: rootCmd,
+	}
+
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install Zig and ZLS",
 		Long: `Install the Zig compiler and ZLS language server.
-By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.`,
+By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.
+You can specify a version to install using --zig-version, otherwise the latest master version will be used.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use the provided root command instead of creating a new one
 			cfg, log, err := rootCmd.LoadLoggerAndConfig()
@@ -72,19 +79,19 @@ By default, both Zig and ZLS will be installed unless --zig-only or --zls-only i
 			}
 
 			// Run the TUI installer
-			runInstallation(cfg, styles, log)
+			runInstallation(cfg, styles, log, ic.zigVersion)
 		},
 	}
 
-	return &InstallCommand{
-		cmd:     installCmd,
-		options: options,
-		rootCmd: rootCmd, // Set the root command reference
-	}
+	// Add version flag
+	installCmd.Flags().StringVarP(&ic.zigVersion, "zig-version", "v", "", "Specify Zig version to install (default: latest master)")
+
+	ic.cmd = installCmd
+	return ic
 }
 
 // runInstallation starts the TUI installation process
-func runInstallation(config *config.Config, styles *tui.Styles, logger logger.ILogger) {
+func runInstallation(config *config.Config, styles *tui.Styles, logger logger.ILogger, zigVersion string) {
 	initialModel := tui.NewModel(config, styles, logger)
 	p := tea.NewProgram(initialModel)
 
@@ -92,13 +99,11 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 		logger.LogInfo("Starting installation process")
 
 		// Store Zig version to match with ZLS
-		var zigVersion string
-
 		if !config.ZLSOnly {
 			logger.LogInfo("Starting Zig installation")
 			p.Send(tui.StatusMsg("Installing Zig..."))
 			var err error
-			zigVersion, err = installer.InstallZig(p, config, logger)
+			zigVersion, err = installer.InstallZig(p, config, logger, zigVersion)
 			if err != nil {
 				logger.LogError("Zig installation failed: %v", err)
 				p.Send(tui.ErrorMsg(err))
