@@ -247,7 +247,12 @@ func getZigVersion(zigIndexURL string, requestedVersion string) (*ZigVersionInfo
 		return nil, fmt.Errorf("version %s not found", version)
 	}
 
-	if version == "master" && versionInfo.Version == "" {
+	// For non-master versions, use the key from the JSON as the version
+	// since these entries don't have a version field
+	if version != "master" {
+		versionInfo.Version = version
+	} else if versionInfo.Version == "" {
+		// Only check for empty version on master, since it should have one
 		return nil, fmt.Errorf("could not determine master version")
 	}
 

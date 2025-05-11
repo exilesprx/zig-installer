@@ -26,12 +26,11 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		user = os.Getenv("USER")
 	}
 
-	// Set ownership
+	// Set initial directory ownership
 	if user != "" {
 		if config.Verbose {
 			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user)))
 		}
-
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
 			if config.Verbose {
@@ -43,145 +42,112 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		}
 	}
 
-	// Determine if a matching ZLS tag exists for this Zig version
-	zlsTag := convertToSemanticVersion(zigVersion)
-	hasMatchingTag := checkZLSTagExists(zlsTag, logger)
+	// First determine if we're installing a specific version
+	version := convertToSemanticVersion(zigVersion)
+	logger.LogInfo("Zig version detected: %s, converted to ZLS version: %s", zigVersion, version)
+	isSpecificVersion := version != "" && version != "master"
 
-	if hasMatchingTag {
-		p.Send(tui.StatusMsg(fmt.Sprintf("Found matching ZLS tag for Zig %s", zigVersion)))
-		logger.LogInfo("Found matching ZLS tag: %s", zlsTag)
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Found matching ZLS tag: %s", zlsTag)))
+	// Check if repo already exists
+	isRepoCloned := false
+	if _, err := os.Stat(filepath.Join(config.ZLSDir, ".git")); err == nil {
+		// Verify it's the correct repo
+		cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+		cmd.Dir = config.ZLSDir
+		if output, err := cmd.CombinedOutput(); err == nil && strings.Contains(string(output), "zigtools/zls") {
+			isRepoCloned = true
 		}
-	} else {
-		p.Send(tui.StatusMsg(fmt.Sprintf("No matching ZLS tag for Zig %s, using master branch", zigVersion)))
-		logger.LogInfo("No matching ZLS tag for Zig %s, using master branch", zigVersion)
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg("No matching ZLS tag, using master branch"))
-		}
-		zlsTag = ""
 	}
 
-	// Check if ZLS directory exists and update it
-	if _, err := os.Stat(filepath.Join(config.ZLSDir, ".git")); err == nil {
-		p.Send(tui.StatusMsg("Updating ZLS repository..."))
-
-		// If we have a matching tag, checkout that specific tag
-		if hasMatchingTag {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Running: git fetch --tags && git checkout %s in %s", zlsTag, config.ZLSDir)))
-			}
-
-			// First fetch all tags
-			fetchCmd := exec.Command("git", "fetch", "--tags")
-			fetchCmd.Dir = config.ZLSDir
-
-			output, err := fetchCmd.CombinedOutput()
-			if err != nil {
-				if config.Verbose {
-					p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error fetching tags: %s", output)))
-				}
-				return fmt.Errorf("could not fetch ZLS tags: %w", err)
-			}
-
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(string(output)))
-			}
-
-			// Then checkout the specific tag
-			checkoutCmd := exec.Command("git", "checkout", zlsTag)
-			checkoutCmd.Dir = config.ZLSDir
-
-			output, err = checkoutCmd.CombinedOutput()
-			if err != nil {
-				if config.Verbose {
-					p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out tag: %s", output)))
-				}
-				return fmt.Errorf("could not checkout ZLS tag %s: %w", zlsTag, err)
-			}
-
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(string(output)))
-			}
-		} else {
-			// No matching tag, just pull the latest master
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg("Running: git checkout master && git pull in " + config.ZLSDir))
-			}
-
-			// First make sure we're on master
-			checkoutCmd := exec.Command("git", "checkout", "master")
-			checkoutCmd.Dir = config.ZLSDir
-
-			output, err := checkoutCmd.CombinedOutput()
-			if err != nil {
-				if config.Verbose {
-					p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out master: %s", output)))
-				}
-				// Try main branch if master fails
-				checkoutCmd = exec.Command("git", "checkout", "main")
-				checkoutCmd.Dir = config.ZLSDir
-
-				output, err = checkoutCmd.CombinedOutput()
-				if err != nil {
-					if config.Verbose {
-						p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out main: %s", output)))
-					}
-					return fmt.Errorf("could not checkout ZLS master/main branch: %w", err)
-				}
-			}
-
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(string(output)))
-			}
-
-			// Then pull the latest changes
-			cmd := exec.Command("git", "pull")
-			cmd.Dir = config.ZLSDir
-
-			output, err = cmd.CombinedOutput()
-			if err != nil {
-				if config.Verbose {
-					p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error updating repository: %s", output)))
-				}
-				return fmt.Errorf("could not update ZLS repository: %w", err)
-			}
-
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(string(output)))
-			}
-		}
-	} else {
-		// Clone the repository
+	// Clone repository if it doesn't exist
+	if !isRepoCloned {
 		p.Send(tui.StatusMsg("Cloning ZLS repository..."))
 
-		var cloneCmd *exec.Cmd
-
-		if hasMatchingTag {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Running: git clone -b %s --depth 1 https://github.com/zigtools/zls.git %s", zlsTag, config.ZLSDir)))
-			}
-
-			// Clone with specific tag/branch
-			cloneCmd = exec.Command("git", "clone", "-b", zlsTag, "--depth", "1", "https://github.com/zigtools/zls.git", config.ZLSDir)
-		} else {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Running: git clone --depth 1 https://github.com/zigtools/zls.git %s", config.ZLSDir)))
-			}
-
-			// Clone default branch with depth 1
-			cloneCmd = exec.Command("git", "clone", "--depth", "1", "https://github.com/zigtools/zls.git", config.ZLSDir)
+		// Clean directory if it exists but isn't a valid repo
+		if err := os.RemoveAll(config.ZLSDir); err != nil {
+			return fmt.Errorf("could not clean ZLS directory: %w", err)
 		}
 
-		output, err := cloneCmd.CombinedOutput()
-		if err != nil {
+		cmd := exec.Command("git", "clone", "https://github.com/zigtools/zls.git", config.ZLSDir)
+		if output, err := cmd.CombinedOutput(); err != nil {
 			if config.Verbose {
 				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error cloning repository: %s", output)))
 			}
 			return fmt.Errorf("could not clone ZLS repository: %w", err)
 		}
+	}
 
+	// Handle version-specific installation
+	if isSpecificVersion {
+		p.Send(tui.StatusMsg(fmt.Sprintf("Setting up ZLS version %s...", version)))
+
+		// Fetch tags
+		fetchCmd := exec.Command("git", "fetch", "--tags")
+		fetchCmd.Dir = config.ZLSDir
+		if output, err := fetchCmd.CombinedOutput(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error fetching tags: %s", output)))
+			}
+			return fmt.Errorf("could not fetch tags: %w", err)
+		}
+
+		// Check if tag exists
+		checkCmd := exec.Command("git", "rev-parse", "--verify", "refs/tags/"+version)
+		checkCmd.Dir = config.ZLSDir
+		if err := checkCmd.Run(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out version: %s", version)))
+			}
+			return fmt.Errorf("ZLS version %s not found", version)
+		}
+
+		// Checkout the specific version
+		checkoutCmd := exec.Command("git", "checkout", version)
+		checkoutCmd.Dir = config.ZLSDir
+		if output, err := checkoutCmd.CombinedOutput(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out version: %s", output)))
+			}
+			return fmt.Errorf("could not checkout version %s: %w", version, err)
+		}
+	} else {
+		// Just update to latest master
+		p.Send(tui.StatusMsg("Setting up latest ZLS..."))
+
+		// First try to checkout master/main
+		checkoutCmd := exec.Command("git", "checkout", "master")
+		checkoutCmd.Dir = config.ZLSDir
+		if err := checkoutCmd.Run(); err != nil {
+			// Try main if master fails
+			checkoutCmd = exec.Command("git", "checkout", "main")
+			checkoutCmd.Dir = config.ZLSDir
+			if err := checkoutCmd.Run(); err != nil {
+				return fmt.Errorf("could not checkout master/main branch")
+			}
+		}
+
+		// Pull latest changes
+		pullCmd := exec.Command("git", "pull")
+		pullCmd.Dir = config.ZLSDir
+		if output, err := pullCmd.CombinedOutput(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error pulling latest changes: %s", output)))
+			}
+			return fmt.Errorf("could not pull latest changes: %w", err)
+		}
+	}
+
+	// Set ownership after git operations if not root user
+	if user != "" {
 		if config.Verbose {
+			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir)))
+		}
+		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
+			}
+			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
+		} else if config.Verbose && len(output) > 0 {
 			p.Send(tui.DetailOutputMsg(string(output)))
 		}
 	}
@@ -206,6 +172,23 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 	if config.Verbose {
 		p.Send(tui.DetailOutputMsg(string(output)))
+	}
+
+	// Set ownership after building if not root user
+	if user != "" {
+		buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
+		if config.Verbose {
+			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership of build output in %s", buildOutDir)))
+		}
+		cmd := exec.Command("chown", "-R", user+":"+user, buildOutDir)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			if config.Verbose {
+				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
+			}
+			return fmt.Errorf("could not set ownership of build output: %w", err)
+		} else if config.Verbose && len(output) > 0 {
+			p.Send(tui.DetailOutputMsg(string(output)))
+		}
 	}
 
 	// Create symbolic link
@@ -236,30 +219,30 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 	return nil
 }
 
-// checkZLSTagExists verifies if a specific tag exists in the ZLS repository
-func checkZLSTagExists(tag string, logger logger.ILogger) bool {
-	cmd := exec.Command("git", "ls-remote", "--tags", "https://github.com/zigtools/zls.git", tag)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.LogError("Error checking ZLS tag: %v", err)
-		return false
-	}
-
-	// If the output contains the tag, it exists
-	return strings.Contains(string(output), tag)
-}
-
-// convertToSemanticVersion converts a Zig version like "0.12.0-dev.1234+hash" to semantic version format "0.12.0"
+// convertToSemanticVersion converts a Zig version to a ZLS tag format
 func convertToSemanticVersion(zigVersion string) string {
-	// Extract the semantic version part (major.minor.patch)
-	parts := strings.Split(zigVersion, "-")
-	if len(parts) > 0 {
-		// Further ensure we only have three components (major.minor.patch)
-		versionParts := strings.Split(parts[0], ".")
-		if len(versionParts) >= 3 {
-			return fmt.Sprintf("%s.%s.%s", versionParts[0], versionParts[1], versionParts[2])
-		}
-		return parts[0]
+	if zigVersion == "" {
+		return ""
 	}
-	return zigVersion
+
+	// Handle master/dev versions specially
+	if zigVersion == "master" || strings.Contains(zigVersion, "-dev.") {
+		return "master"
+	}
+
+	// Convert input version to semantic version format
+	version := zigVersion
+	if idx := strings.Index(version, "-"); idx != -1 {
+		version = version[:idx]
+	}
+
+	// Split into components
+	parts := strings.Split(version, ".")
+	if len(parts) >= 3 {
+		return fmt.Sprintf("%s.%s.%s", parts[0], parts[1], parts[2])
+	}
+	if len(parts) == 2 {
+		return fmt.Sprintf("%s.%s.0", parts[0], parts[1])
+	}
+	return ""
 }

@@ -34,7 +34,7 @@ func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCo
 		Short: "Install Zig and ZLS",
 		Long: `Install the Zig compiler and ZLS language server.
 By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.
-You can specify a version to install using --zig-version, otherwise the latest master version will be used.`,
+You can specify a version to install using --version, otherwise the latest master version will be used.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use the provided root command instead of creating a new one
 			cfg, log, err := rootCmd.LoadLoggerAndConfig()
@@ -84,7 +84,7 @@ You can specify a version to install using --zig-version, otherwise the latest m
 	}
 
 	// Add version flag
-	installCmd.Flags().StringVarP(&ic.zigVersion, "zig-version", "v", "", "Specify Zig version to install (default: latest master)")
+	installCmd.Flags().StringVarP(&ic.zigVersion, "version", "v", "", "Specify Zig version to install (default: latest master)")
 
 	ic.cmd = installCmd
 	return ic
