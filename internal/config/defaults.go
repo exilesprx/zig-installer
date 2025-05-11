@@ -24,10 +24,6 @@ type DefaultConfig struct {
 // getPlatformPaths returns the platform-specific paths
 func getPlatformPaths() (zigDir, zlsDir, binDir string) {
 	switch runtime.GOOS {
-	case "windows":
-		return "C:\\Program Files\\zig",
-			"C:\\Program Files\\zls",
-			"C:\\Program Files\\zig\\bin"
 	case "darwin":
 		return "/usr/local/zig",
 			"/usr/local/zls",

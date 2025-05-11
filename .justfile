@@ -25,7 +25,6 @@ help:
   @echo "  build                   - Build for current platform"
   @echo "  build-all               - Build for all platforms (linux, windows, mac)"
   @echo "  build-linux             - Build for Linux (amd64)"
-  @echo "  build-windows           - Build for Windows (amd64)"
   @echo "  build-mac               - Build for macOS (amd64)"
 
 # Build for current platform
@@ -39,17 +38,12 @@ _build os arch suffix="":
   GOOS={{os}} GOARCH={{arch}} go build -o zig-install-{{os}}-{{arch}}{{suffix}} -ldflags="$(just _setup)"
 
 # Build for all platforms
-build-all: build-linux build-windows build-mac
+build-all: build-linux build-mac
   @echo "All builds completed"
 
 # Build for Linux
 build-linux:
   @just _build linux amd64
-
-# Build for Windows
-build-windows:
-  # TODO: Update .env file to include the correct paths for Windows
-  @just _build windows amd64 .exe
 
 # Build for macOS (using darwin as the OS name)
 build-mac:
