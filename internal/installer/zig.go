@@ -24,57 +24,61 @@ type ZigBuildInfo struct {
 	Size    string `json:"size"`
 }
 
-// ZigJSON represents the JSON response from ziglang.org/download/index.json
-type ZigJSON struct {
-	Master struct {
-		Version      string       `json:"version"`
-		Date         string       `json:"date"`
-		Docs         string       `json:"docs"`
-		StdDocs      string       `json:"stdDocs"`
-		Src          ZigBuildInfo `json:"src"`
-		Bootstrap    ZigBuildInfo `json:"bootstrap"`
-		X86_64MacOS  ZigBuildInfo `json:"x86_64-macos"`
-		Aarch64MacOS ZigBuildInfo `json:"aarch64-macos"`
-		X86_64Linux  ZigBuildInfo `json:"x86_64-linux"`
-		Aarch64Linux ZigBuildInfo `json:"aarch64-linux"`
-	} `json:"master"`
+// ZigVersionInfo represents version-specific information
+type ZigVersionInfo struct {
+	Version      string       `json:"version"`
+	Date         string       `json:"date"`
+	Docs         string       `json:"docs"`
+	StdDocs      string       `json:"stdDocs"`
+	Src          ZigBuildInfo `json:"src"`
+	Bootstrap    ZigBuildInfo `json:"bootstrap"`
+	X86_64MacOS  ZigBuildInfo `json:"x86_64-macos"`
+	Aarch64MacOS ZigBuildInfo `json:"aarch64-macos"`
+	X86_64Linux  ZigBuildInfo `json:"x86_64-linux"`
+	Aarch64Linux ZigBuildInfo `json:"aarch64-linux"`
 }
 
 // getPlatformBuildInfo returns the appropriate build info for the current platform
-func getPlatformBuildInfo(zigJSON *ZigJSON) (*ZigBuildInfo, error) {
+func getPlatformBuildInfo(versionInfo *ZigVersionInfo) (*ZigBuildInfo, error) {
 	arch := runtime.GOARCH
 	switch runtime.GOOS {
 	case "darwin":
 		switch arch {
 		case "amd64":
-			return &zigJSON.Master.X86_64MacOS, nil
+			return &versionInfo.X86_64MacOS, nil
 		case "arm64":
-			return &zigJSON.Master.Aarch64MacOS, nil
+			return &versionInfo.Aarch64MacOS, nil
 		}
 	case "linux":
 		switch arch {
 		case "amd64":
-			return &zigJSON.Master.X86_64Linux, nil
+			return &versionInfo.X86_64Linux, nil
 		case "arm64":
-			return &zigJSON.Master.Aarch64Linux, nil
+			return &versionInfo.Aarch64Linux, nil
 		}
 	}
 	return nil, fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, arch)
 }
 
 // InstallZig handles the Zig installation process
-func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (string, error) {
-	// Get the latest version info
-	p.Send(tui.StatusMsg("Fetching latest Zig version..."))
-	zigJSON, err := getLatestZigVersion(config.ZigIndexURL)
-	version := zigJSON.Master.Version
+func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, requestedVersion string) (string, error) {
+	// Get the version info
+	msg := "Fetching latest Zig version..."
+	if requestedVersion != "" && requestedVersion != "master" {
+		msg = fmt.Sprintf("Fetching Zig version %s...", requestedVersion)
+	}
+	p.Send(tui.StatusMsg(msg))
+
+	versionInfo, err := getZigVersion(config.ZigIndexURL, requestedVersion)
 	if err != nil {
 		return "", err
 	}
-	p.Send(tui.StatusMsg(fmt.Sprintf("Found latest Zig version: %s", version)))
+
+	version := versionInfo.Version
+	p.Send(tui.StatusMsg(fmt.Sprintf("Using Zig version: %s", version)))
 
 	// Get platform-specific build info
-	buildInfo, err := getPlatformBuildInfo(zigJSON)
+	buildInfo, err := getPlatformBuildInfo(versionInfo)
 	if err != nil {
 		return "", err
 	}
@@ -215,8 +219,8 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger) (s
 	return version, nil
 }
 
-// getLatestZigVersion fetches the latest version information from ziglang.org
-func getLatestZigVersion(zigIndexURL string) (*ZigJSON, error) {
+// getZigVersion fetches version information from ziglang.org
+func getZigVersion(zigIndexURL string, requestedVersion string) (*ZigVersionInfo, error) {
 	resp, err := http.Get(zigIndexURL)
 	if err != nil {
 		return nil, err
@@ -228,16 +232,26 @@ func getLatestZigVersion(zigIndexURL string) (*ZigJSON, error) {
 		return nil, err
 	}
 
-	var zigJSON ZigJSON
-	if err := json.Unmarshal(body, &zigJSON); err != nil {
+	var versions map[string]ZigVersionInfo
+	if err := json.Unmarshal(body, &versions); err != nil {
 		return nil, err
 	}
 
-	if zigJSON.Master.Version == "" {
-		return nil, fmt.Errorf("could not determine latest Zig version")
+	version := requestedVersion
+	if version == "" || version == "master" {
+		version = "master"
 	}
 
-	return &zigJSON, nil
+	versionInfo, ok := versions[version]
+	if !ok {
+		return nil, fmt.Errorf("version %s not found", version)
+	}
+
+	if version == "master" && versionInfo.Version == "" {
+		return nil, fmt.Errorf("could not determine master version")
+	}
+
+	return &versionInfo, nil
 }
 
 // isZigInstalled checks if the specified version is already installed
@@ -247,5 +261,15 @@ func isZigInstalled(version string) bool {
 	if err != nil {
 		return false
 	}
-	return strings.TrimSpace(string(output)) == version
+
+	// Check if version string contains the specified version
+	// This handles cases like "0.11.0" matching "0.11.0-dev.3180+hash"
+	installedVersion := strings.TrimSpace(string(output))
+
+	// Handle master version specially
+	if version == "master" {
+		return strings.Contains(installedVersion, "-dev.")
+	}
+
+	return strings.HasPrefix(installedVersion, version)
 }
