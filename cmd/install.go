@@ -50,11 +50,7 @@ By default, both Zig and ZLS will be installed unless --zig-only or --zls-only i
 			}
 
 			if cfg.ShowSettings {
-				if cfg.NoColor {
-					cfg.PrintSettings(cfg.NoColor)
-				} else {
-					cfg.PrintSettings(cfg.NoColor)
-				}
+				cfg.PrintSettings()
 				log.LogInfo("Displayed settings")
 				os.Exit(0)
 			}

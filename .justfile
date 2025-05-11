@@ -17,7 +17,7 @@ _setup:
   COMMIT=$(git rev-parse HEAD)
   DATE=$(date)
   # Use environment variable directly or fall back to default if not set
-  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE' -X '{{config_package}}.DefaultZigPubKey=$ZIG_PUB_KEY' -X '{{config_package}}.DefaultZigDir=$ZIG_DIR' -X '{{config_package}}.DefaultZLSDir=$ZLS_DIR' -X '{{config_package}}.DefaultBinDir=$BIN_DIR' -X '{{config_package}}.DefaultZigDownURL=$ZIG_DOWN_URL' -X '{{config_package}}.DefaultZigIndexURL=$ZIG_INDEX_URL'"
+  echo "-X {{package}}.Version=$VERSION -X {{package}}.Commit=$COMMIT -X '{{package}}.BuildDate=$DATE'"
 
 # Display available commands
 help:

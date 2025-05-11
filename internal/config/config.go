@@ -7,26 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Build-time configurable defaults that can be set with linker flags
 var (
-	// DefaultZigPubKey must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=key'"
-	DefaultZigPubKey string
-
-	// DefaultZigDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigDir=/custom/path'"
-	DefaultZigDir string
-
-	// DefaultZLSDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZLSDir=/custom/path'"
-	DefaultZLSDir string
-
-	// DefaultBinDir must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultBinDir=/custom/path'"
-	DefaultBinDir string
-
-	// DefaultZigDownURL must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigDownURL=url'"
-	DefaultZigDownURL string
-
-	// DefaultZigIndexURL must be set with -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigIndexURL=url'"
-	DefaultZigIndexURL string
-
 	// DefaultEnvFile the default name of the environment file
 	DefaultEnvFile = ".env"
 
@@ -64,14 +45,15 @@ type Config struct {
 
 // NewConfig creates a new configuration with default values
 func NewConfig() *Config {
+	defaults := GetDefaults()
 	return &Config{
 		// Default values for .env configurable settings
-		ZigDir:      DefaultZigDir,
-		ZLSDir:      DefaultZLSDir,
-		BinDir:      DefaultBinDir,
-		ZigPubKey:   DefaultZigPubKey,
-		ZigDownURL:  DefaultZigDownURL,
-		ZigIndexURL: DefaultZigIndexURL,
+		ZigDir:      defaults.ZigDir,
+		ZLSDir:      defaults.ZLSDir,
+		BinDir:      defaults.BinDir,
+		ZigPubKey:   defaults.ZigPubKey,
+		ZigDownURL:  defaults.ZigDownURL,
+		ZigIndexURL: defaults.ZigIndexURL,
 
 		// Default values for CLI options
 		EnvFile:   DefaultEnvFile,
@@ -81,17 +63,18 @@ func NewConfig() *Config {
 	}
 }
 
-// InitViper initializes Viper with only the .env configurable values
+// InitViper initializes Viper with platform-specific defaults
 func InitViper() *viper.Viper {
 	v := viper.New()
+	defaults := GetDefaults()
 
-	// Set default values for .env configurable settings only
-	v.SetDefault("zig_dir", DefaultZigDir)
-	v.SetDefault("zls_dir", DefaultZLSDir)
-	v.SetDefault("bin_dir", DefaultBinDir)
-	v.SetDefault("zig_pub_key", DefaultZigPubKey)
-	v.SetDefault("zig_down_url", DefaultZigDownURL)
-	v.SetDefault("zig_index_url", DefaultZigIndexURL)
+	// Set default values
+	v.SetDefault("zig_dir", defaults.ZigDir)
+	v.SetDefault("zls_dir", defaults.ZLSDir)
+	v.SetDefault("bin_dir", defaults.BinDir)
+	v.SetDefault("zig_pub_key", defaults.ZigPubKey)
+	v.SetDefault("zig_down_url", defaults.ZigDownURL)
+	v.SetDefault("zig_index_url", defaults.ZigIndexURL)
 
 	return v
 }
@@ -109,7 +92,7 @@ func LoadEnvConfig(v *viper.Viper, envFile string) (*Config, error) {
 				return nil, fmt.Errorf("error reading config file: %w", err)
 			}
 
-			// Only override the six specific values if they are set in the .env file
+			// Only override values if they are set in the .env file
 			if v.IsSet("zig_dir") {
 				config.ZigDir = v.GetString("zig_dir")
 			}
@@ -131,14 +114,11 @@ func LoadEnvConfig(v *viper.Viper, envFile string) (*Config, error) {
 		}
 	}
 
-	// The rest of the config values should be set by Cobra, not here
-
 	return config, nil
 }
 
-// GenerateEnvFile creates a template .env file with only the six specific values
+// GenerateEnvFile creates a template .env file with default values
 func (c *Config) GenerateEnvFile() error {
-	// Only include the six specific values in the .env file
 	defaults := []string{
 		"# Zig & ZLS Installer Configuration",
 		"# Directories",
@@ -152,7 +132,6 @@ func (c *Config) GenerateEnvFile() error {
 		fmt.Sprintf("ZIG_INDEX_URL=%s", c.ZigIndexURL),
 	}
 
-	// Create or overwrite the file
 	f, err := os.Create(c.EnvFile)
 	if err != nil {
 		return fmt.Errorf("could not create .env file: %w", err)
@@ -169,27 +148,15 @@ func (c *Config) GenerateEnvFile() error {
 }
 
 // PrintSettings displays the current configuration
-func (c *Config) PrintSettings(noColor bool) {
-	if noColor {
-		fmt.Println("Current Settings:")
-		fmt.Printf("ZIG_DIR: %s\n", c.ZigDir)
-		fmt.Printf("ZLS_DIR: %s\n", c.ZLSDir)
-		fmt.Printf("BIN_DIR: %s\n", c.BinDir)
-		fmt.Printf("ZIG_PUB_KEY: %s\n", c.ZigPubKey)
-		fmt.Printf("ZIG_DOWN_URL: %s\n", c.ZigDownURL)
-		fmt.Printf("ZIG_INDEX_URL: %s\n", c.ZigIndexURL)
-		fmt.Printf("Environment file: %s\n", c.EnvFile)
-	} else {
-		// In the actual implementation, this would use styles from the theme package
-		fmt.Println("Current Settings (colored output would be here):")
-		fmt.Printf("ZIG_DIR: %s\n", c.ZigDir)
-		fmt.Printf("ZLS_DIR: %s\n", c.ZLSDir)
-		fmt.Printf("BIN_DIR: %s\n", c.BinDir)
-		fmt.Printf("ZIG_PUB_KEY: %s\n", c.ZigPubKey)
-		fmt.Printf("ZIG_DOWN_URL: %s\n", c.ZigDownURL)
-		fmt.Printf("ZIG_INDEX_URL: %s\n", c.ZigIndexURL)
-		fmt.Printf("Environment file: %s\n", c.EnvFile)
-	}
+func (c *Config) PrintSettings() {
+	fmt.Println("Current Settings:")
+	fmt.Printf("ZIG_DIR: %s\n", c.ZigDir)
+	fmt.Printf("ZLS_DIR: %s\n", c.ZLSDir)
+	fmt.Printf("BIN_DIR: %s\n", c.BinDir)
+	fmt.Printf("ZIG_PUB_KEY: %s\n", c.ZigPubKey)
+	fmt.Printf("ZIG_DOWN_URL: %s\n", c.ZigDownURL)
+	fmt.Printf("ZIG_INDEX_URL: %s\n", c.ZigIndexURL)
+	fmt.Printf("Environment file: %s\n", c.EnvFile)
 }
 
 // EnsureDirectories creates the necessary directories if they don't exist
@@ -202,7 +169,6 @@ func (c *Config) EnsureDirectories() error {
 		}
 	}
 
-	// Ensure bin directory exists
 	if _, err := os.Stat(c.BinDir); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(c.BinDir, 0755); err != nil {
