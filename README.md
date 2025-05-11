@@ -128,10 +128,22 @@ _Note: You must have Zig installed in order to compile ZLS._
 sudo ./zig-install-linux-amd64 install --zls-only
 ```
 
-Install a specific version of Zig and matching ZLS version:
+Install a specific version (both Zig and ZLS will be installed at this version):
 
 ```bash
 sudo ./zig-install-linux-amd64 install --version 0.11.0
+```
+
+Install only Zig at a specific version:
+
+```bash
+sudo ./zig-install-linux-amd64 install --zig-only --version 0.11.0
+```
+
+Install only ZLS (will use current Zig version regardless of --version):
+
+```bash
+sudo ./zig-install-linux-amd64 install --zls-only --version 0.11.0  # Note: version will be ignored
 ```
 
 Install with verbose output and custom log file:
@@ -158,6 +170,17 @@ Show version information:
 ./zig-install-linux-amd64 version
 ```
 
+## Version Management
+
+The installer manages Zig and ZLS versions in the following way:
+
+- When using `--version`, both Zig and ZLS will be installed at the specified version to ensure compatibility
+- When using `--zig-only` with `--version`, only Zig will be installed at the specified version
+- When using `--zls-only` with `--version`, ZLS will be installed matching your current Zig version, ignoring the specified version
+- If no version is specified, the latest master versions will be used
+
+This versioning strategy ensures that Zig and ZLS remain compatible with each other.
+
 ## Notes
 
 - This program must be run as root as it installs software to system directories
@@ -165,7 +188,6 @@ Show version information:
 - Logging is enabled by default to `zig-install.log`, but can be configured or disabled
 - The program performs automatic dependency checks before installation
 - Both Zig and ZLS installations preserve file ownership for non-root users
-- When installing a specific Zig version, ZLS installation will attempt to match that version
 
 ## License
 
