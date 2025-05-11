@@ -52,10 +52,10 @@ sudo ./zig-install-{platform} [command] [OPTIONS]
 - `--verbose`: Show detailed output during installation
 - `--no-color`: Disable colored output
 - `--env <file>`: Specify a custom environment file (default: `.env`)
-- `--settings`: Show current settings
+- `--settings`: Show current configuration settings
 - `--log-file <file>`: Specify log file (default: `zig-install.log`)
-- `--enable-log`: Enable/disable logging to file
-- `--version`: The version to install for Zig and ZLS
+- `--enable-log`: Enable/disable logging to file (enabled by default)
+- `--version, -v <version>`: Specify Zig version to install (default: latest master)
 
 ## Configuration
 
@@ -64,9 +64,24 @@ This program can be configured in two ways (in order of precedence):
 1. **Command-line flags**: Options provided directly when running the program
 2. **Configuration file**: Settings in an `.env` file
 
+Before running the program, it will check for required dependencies like `wget`, `git`, `jq`, `minisign`, and `xz`. If any are missing, it will inform you so you can install them.
+
 ### Configuration File (.env)
 
-You can create a `.env` file in the same directory as the executable or use the `env` command to create a template:
+You can create a `.env` file in the same directory as the executable in two ways:
+1. Use the `env` command to create a template:
+   ```bash
+   ./zig-install-linux-amd64 env
+   ```
+2. Use the `--generate-env` flag with the install command:
+   ```bash
+   sudo ./zig-install-linux-amd64 install --generate-env
+   ```
+
+You can view your current configuration settings at any time using the `--settings` flag:
+```bash
+./zig-install-linux-amd64 install --settings
+```
 
 ```
 # Zig download and verification
@@ -94,7 +109,7 @@ The justfile in this project automatically reads from the `.env` file and sets t
 
 ## Examples
 
-Install both Zig and ZLS:
+Install both Zig and ZLS (latest master):
 
 ```bash
 sudo ./zig-install-linux-amd64 install
@@ -113,16 +128,28 @@ _Note: You must have Zig installed in order to compile ZLS._
 sudo ./zig-install-linux-amd64 install --zls-only
 ```
 
+Install a specific version of Zig and matching ZLS version:
+
+```bash
+sudo ./zig-install-linux-amd64 install --version 0.11.0
+```
+
+Install with verbose output and custom log file:
+
+```bash
+sudo ./zig-install-linux-amd64 install --verbose --log-file custom.log
+```
+
 Display the current settings:
 
 ```bash
-sudo ./zig-install-linux-amd64 install --settings
+./zig-install-linux-amd64 install --settings
 ```
 
 Generate a template .env file:
 
 ```bash
-sudo ./zig-install-linux-amd64 install --generate-env
+./zig-install-linux-amd64 env
 ```
 
 Show version information:
@@ -131,16 +158,14 @@ Show version information:
 ./zig-install-linux-amd64 version
 ```
 
-Install specific version:
-
-```bash
-./zig-install-linux-amd64 --version 0.14.0 install
-```
-
 ## Notes
 
 - This program must be run as root as it installs software to system directories
 - Configuration via .env file allows for easy customization without rebuilding
+- Logging is enabled by default to `zig-install.log`, but can be configured or disabled
+- The program performs automatic dependency checks before installation
+- Both Zig and ZLS installations preserve file ownership for non-root users
+- When installing a specific Zig version, ZLS installation will attempt to match that version
 
 ## License
 
