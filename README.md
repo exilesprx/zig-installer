@@ -36,7 +36,7 @@ just build
 ## Usage
 
 ```bash
-sudo ./zig-install-{platform}-{arch} [command] [OPTIONS]
+sudo ./zig-install-{platform} [command] [OPTIONS]
 ```
 
 ### Commands
@@ -68,19 +68,13 @@ This program can be configured in two ways (in order of precedence):
 You can create a `.env` file in the same directory as the executable or use the `env` command to create a template:
 
 ```
-# Zig & ZLS Installer Configuration
-# Directories
-ZIG_DIR=/opt/zig
-ZLS_DIR=/opt/zls
-BIN_DIR=/usr/local/bin
-
 # Zig download and verification
 ZIG_PUB_KEY=RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U
 ZIG_DOWN_URL=https://ziglang.org/builds/
 ZIG_INDEX_URL=https://ziglang.org/download/index.json
 ```
 
-The values override the defaults. Please ensure the paths are correct for your system.
+The values override the defaults.
 
 Creating a `.env` file is optional, but it allows for easy customization without modifying the source code. It allows you to update settings in the event of:
 
@@ -92,7 +86,7 @@ Creating a `.env` file is optional, but it allows for easy customization without
 When building from source, you can also customize some defaults using linker flags:
 
 ```bash
-go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.DefaultZigPubKey=YOUR_KEY'"
+go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.Version=VERSION'"
 ```
 
 The justfile in this project automatically reads from the `.env` file and sets the defaults during build.

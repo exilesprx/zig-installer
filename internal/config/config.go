@@ -93,15 +93,6 @@ func LoadEnvConfig(v *viper.Viper, envFile string) (*Config, error) {
 			}
 
 			// Only override values if they are set in the .env file
-			if v.IsSet("zig_dir") {
-				config.ZigDir = v.GetString("zig_dir")
-			}
-			if v.IsSet("zls_dir") {
-				config.ZLSDir = v.GetString("zls_dir")
-			}
-			if v.IsSet("bin_dir") {
-				config.BinDir = v.GetString("bin_dir")
-			}
 			if v.IsSet("zig_pub_key") {
 				config.ZigPubKey = v.GetString("zig_pub_key")
 			}
