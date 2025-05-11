@@ -55,6 +55,7 @@ sudo ./zig-install-{platform} [command] [OPTIONS]
 - `--settings`: Show current settings
 - `--log-file <file>`: Specify log file (default: `zig-install.log`)
 - `--enable-log`: Enable/disable logging to file
+- `--version`: The version to install for Zig and ZLS
 
 ## Configuration
 
@@ -128,6 +129,12 @@ Show version information:
 
 ```bash
 ./zig-install-linux-amd64 version
+```
+
+Install specific version:
+
+```bash
+./zig-install-linux-amd64 --version 0.14.0 install
 ```
 
 ## Notes
