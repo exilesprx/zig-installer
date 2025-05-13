@@ -28,17 +28,13 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 	// Set initial directory ownership
 	if user != "" {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user), config.Verbose)
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error setting ownership: %s", output), config.Verbose)
 			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
-		} else if config.Verbose && len(output) > 0 {
-			p.Send(tui.DetailOutputMsg(string(output)))
+		} else {
+			sendDetailedOutputMsg(p, string(output), config.Verbose)
 		}
 	}
 
@@ -69,9 +65,7 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 		cmd := exec.Command("git", "clone", "https://github.com/zigtools/zls.git", config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error cloning repository: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error cloning repository: %s", output), config.Verbose)
 			return fmt.Errorf("could not clone ZLS repository: %w", err)
 		}
 	}
@@ -84,9 +78,7 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		fetchCmd := exec.Command("git", "fetch", "--tags")
 		fetchCmd.Dir = config.ZLSDir
 		if output, err := fetchCmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error fetching tags: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error fetching tags: %s", output), config.Verbose)
 			return fmt.Errorf("could not fetch tags: %w", err)
 		}
 
@@ -94,9 +86,7 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		checkCmd := exec.Command("git", "rev-parse", "--verify", "refs/tags/"+version)
 		checkCmd.Dir = config.ZLSDir
 		if err := checkCmd.Run(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out version: %s", version)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error checking out version: %s", err), config.Verbose)
 			return fmt.Errorf("ZLS version %s not found", version)
 		}
 
@@ -104,9 +94,7 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		checkoutCmd := exec.Command("git", "checkout", version)
 		checkoutCmd.Dir = config.ZLSDir
 		if output, err := checkoutCmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error checking out version: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error checking out version: %s", output), config.Verbose)
 			return fmt.Errorf("could not checkout version %s: %w", version, err)
 		}
 	} else {
@@ -129,65 +117,49 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		pullCmd := exec.Command("git", "pull")
 		pullCmd.Dir = config.ZLSDir
 		if output, err := pullCmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error pulling latest changes: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error pulling latest changes: %s", output), config.Verbose)
 			return fmt.Errorf("could not pull latest changes: %w", err)
 		}
 	}
 
 	// Set ownership after git operations if not root user
 	if user != "" {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir), config.Verbose)
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error: %s", output), config.Verbose)
 			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
-		} else if config.Verbose && len(output) > 0 {
-			p.Send(tui.DetailOutputMsg(string(output)))
+		} else {
+			sendDetailedOutputMsg(p, string(output), config.Verbose)
 		}
 	}
 
 	// Build ZLS
 	p.Send(tui.StatusMsg("Building ZLS..."))
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir), config.Verbose)
 
 	cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe")
 	cmd.Dir = config.ZLSDir
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error building ZLS: %s", output)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Error building ZLS: %s", output), config.Verbose)
 		return fmt.Errorf("could not build ZLS: %w", err)
 	}
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(string(output)))
-	}
+	sendDetailedOutputMsg(p, string(output), config.Verbose)
 
 	// Set ownership after building if not root user
 	if user != "" {
 		buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership of build output in %s", buildOutDir)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership of build output in %s", buildOutDir), config.Verbose)
 		cmd := exec.Command("chown", "-R", user+":"+user, buildOutDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error setting ownership: %s", output), config.Verbose)
 			return fmt.Errorf("could not set ownership of build output: %w", err)
-		} else if config.Verbose && len(output) > 0 {
-			p.Send(tui.DetailOutputMsg(string(output)))
+		} else {
+			sendDetailedOutputMsg(p, string(output), config.Verbose)
 		}
 	}
 
@@ -197,24 +169,18 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 	p.Send(tui.StatusMsg("Creating symbolic link..."))
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath), config.Verbose)
 
 	if _, err := os.Stat(linkPath); err == nil {
 		os.Remove(linkPath)
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Removed existing symlink at %s", linkPath)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Removed existing symlink at %s", linkPath), config.Verbose)
 	}
 
 	if err := os.Symlink(zlsBinPath, linkPath); err != nil {
 		return fmt.Errorf("could not create symbolic link: %w", err)
 	}
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg("Symlink created successfully"))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Symlink created at %s", linkPath), config.Verbose)
 
 	return nil
 }
