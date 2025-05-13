@@ -102,17 +102,13 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 
 	// Set ownership
 	if user != "" {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Setting ownership of %s to %s", config.ZigDir, user)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership of %s to %s", config.ZigDir, user), config.Verbose)
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZigDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			if config.Verbose {
-				p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error: %s", output)))
-			}
+			sendDetailedOutputMsg(p, fmt.Sprintf("Error setting ownership: %s", output), config.Verbose)
 			return "", fmt.Errorf("could not set ownership of %s: %w", config.ZigDir, err)
-		} else if config.Verbose && len(output) > 0 {
-			p.Send(tui.DetailOutputMsg(string(output)))
+		} else {
+			sendDetailedOutputMsg(p, string(output), config.Verbose)
 		}
 	}
 
@@ -124,74 +120,56 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 
 	p.Send(tui.StatusMsg(fmt.Sprintf("Downloading Zig %s...", version)))
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading from %s to %s", tarURL, tarPath)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Downloading from %s to %s", tarURL, tarPath), config.Verbose)
 
 	cmd := exec.Command("wget", "-O", tarPath, tarURL)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error downloading: %s", output)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Error downloading: %s", output), config.Verbose)
 		return "", fmt.Errorf("could not download Zig: %w", err)
-	} else if config.Verbose {
-		p.Send(tui.DetailOutputMsg(string(output)))
+	} else {
+		sendDetailedOutputMsg(p, string(output), config.Verbose)
 	}
 
 	// Download signature
 	p.Send(tui.StatusMsg("Downloading Zig signature..."))
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Downloading signature from %s.minisig to %s", tarURL, sigPath)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Downloading signature from %s.minisig to %s", tarURL, sigPath), config.Verbose)
 
 	cmd = exec.Command("wget", "-O", sigPath, tarURL+".minisig")
 	if output, err := cmd.CombinedOutput(); err != nil {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Error downloading signature: %s", output)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Error downloading signature: %s", output), config.Verbose)
 		return "", fmt.Errorf("could not download Zig signature: %w", err)
-	} else if config.Verbose {
-		p.Send(tui.DetailOutputMsg(string(output)))
+	} else {
+		sendDetailedOutputMsg(p, string(output), config.Verbose)
 	}
 
 	// Verify signature
 	p.Send(tui.StatusMsg("Verifying Zig download..."))
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Verifying %s with key %s", tarPath, config.ZigPubKey)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Verifying %s with key %s", tarPath, config.ZigPubKey), config.Verbose)
 
 	output, err := exec.Command("minisign", "-Vm", tarPath, "-P", config.ZigPubKey).CombinedOutput()
 	if err != nil {
 		// Clean up files if verification fails
 		os.Remove(tarPath)
 		os.Remove(sigPath)
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Verification failed: %s", output)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Verification failed: %s", output), config.Verbose)
 		return "", fmt.Errorf("signature verification failed: %w: %s", err, output)
 	}
 
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(string(output)))
-	}
+	sendDetailedOutputMsg(p, string(output), config.Verbose)
 
 	// Remove signature file after verification
 	os.Remove(sigPath)
 
 	// Extract Zig
 	p.Send(tui.StatusMsg("Extracting Zig..."))
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Extracting %s to %s", tarPath, config.ZigDir)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Extracting %s to %s", tarPath, config.ZigDir), config.Verbose)
 
 	output, err = exec.Command("tar", "-xf", tarPath, "-C", config.ZigDir).CombinedOutput()
 	if err != nil {
-		if config.Verbose {
-			p.Send(tui.DetailOutputMsg(fmt.Sprintf("Extraction failed: %s", output)))
-		}
+		sendDetailedOutputMsg(p, fmt.Sprintf("Extraction failed: %s", output), config.Verbose)
 		return "", fmt.Errorf("extraction failed: %w", err)
-	} else if config.Verbose && len(output) > 0 {
-		p.Send(tui.DetailOutputMsg(string(output)))
+	} else {
+		sendDetailedOutputMsg(p, string(output), config.Verbose)
 	}
 
 	// Remove tar file after extraction
@@ -205,9 +183,7 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	linkPath := filepath.Join(config.BinDir, "zig")
 
 	p.Send(tui.StatusMsg("Creating symbolic link..."))
-	if config.Verbose {
-		p.Send(tui.DetailOutputMsg(fmt.Sprintf("Creating symlink from %s to %s", zigBinPath, linkPath)))
-	}
+	sendDetailedOutputMsg(p, fmt.Sprintf("Creating symlink from %s to %s", zigBinPath, linkPath), config.Verbose)
 
 	if _, err := os.Stat(linkPath); err == nil {
 		os.Remove(linkPath)
