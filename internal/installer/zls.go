@@ -184,31 +184,3 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 	return nil
 }
-
-// convertToSemanticVersion converts a Zig version to a ZLS tag format
-func convertToSemanticVersion(zigVersion string) string {
-	if zigVersion == "" {
-		return ""
-	}
-
-	// Handle master/dev versions specially
-	if zigVersion == "master" || strings.Contains(zigVersion, "-dev.") {
-		return "master"
-	}
-
-	// Convert input version to semantic version format
-	version := zigVersion
-	if idx := strings.Index(version, "-"); idx != -1 {
-		version = version[:idx]
-	}
-
-	// Split into components
-	parts := strings.Split(version, ".")
-	if len(parts) >= 3 {
-		return fmt.Sprintf("%s.%s.%s", parts[0], parts[1], parts[2])
-	}
-	if len(parts) == 2 {
-		return fmt.Sprintf("%s.%s.0", parts[0], parts[1])
-	}
-	return ""
-}
