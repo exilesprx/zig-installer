@@ -10,15 +10,25 @@ import (
 	"github.com/exilesprx/zig-install/internal/logger"
 )
 
+// InstallState represents the current state of the installation
+type InstallState int
+
+const (
+	StateInit InstallState = iota
+	StateInstalling
+	StateZigDone
+	StateZLSDone
+	StateComplete
+	StateError
+	StateQuit
+)
+
 // Model represents the state of our Bubble Tea app
 type Model struct {
+	state        InstallState
 	spinner      spinner.Model
 	status       string
 	err          error
-	installing   bool
-	zigDone      bool
-	zlsDone      bool
-	quit         bool
 	config       *config.Config
 	styles       *Styles
 	detailOutput string         // Stores detailed command outputs
@@ -42,12 +52,12 @@ func NewModel(config *config.Config, styles *Styles, logger logger.ILogger) Mode
 	s.Style = styles.Spinner
 
 	return Model{
-		spinner:    s,
-		status:     "Starting installation...",
-		installing: true,
-		config:     config,
-		styles:     styles,
-		logger:     logger,
+		state:   StateInit,
+		spinner: s,
+		status:  "Starting installation...",
+		config:  config,
+		styles:  styles,
+		logger:  logger,
 	}
 }
 
@@ -61,7 +71,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			m.quit = true
+			m.state = StateQuit
 			return m, tea.Quit
 		}
 	case spinner.TickMsg:
@@ -69,17 +79,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
 	case InstallCompleteMsg:
-		m.installing = false
+		m.state = StateComplete
 		m.status = string(msg)
-		m.quit = true
 		return m, tea.Quit
 	case ErrorMsg:
+		m.state = StateError
 		m.err = msg
-		m.installing = false
-		m.quit = true
 		return m, tea.Quit
 	case StatusMsg:
 		m.status = string(msg)
+		if m.state == StateInit {
+			m.state = StateInstalling
+		}
 		return m, nil
 	case DetailOutputMsg:
 		if m.config.Verbose {
@@ -87,10 +98,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case ZigDoneMsg:
-		m.zigDone = true
+		m.state = StateZigDone
 		return m, nil
 	case ZLSDoneMsg:
-		m.zlsDone = true
+		m.state = StateZLSDone
 		return m, nil
 	}
 	return m, nil
@@ -106,7 +117,7 @@ func (m Model) View() string {
 
 // plainView renders the UI without colors
 func (m Model) plainView() string {
-	if m.quit {
+	if m.state == StateQuit || m.state == StateComplete || m.state == StateError {
 		if m.err != nil {
 			return fmt.Sprintf("Error: %v\n", m.err)
 		}
@@ -116,9 +127,10 @@ func (m Model) plainView() string {
 	var view string
 	view += " Zig & ZLS Installer \n\n"
 
-	if m.installing {
+	switch m.state {
+	case StateInit, StateInstalling:
 		view += fmt.Sprintf("%s %s\n", m.spinner.View(), m.status)
-	} else {
+	default:
 		view += m.status + "\n"
 	}
 
@@ -127,12 +139,7 @@ func (m Model) plainView() string {
 		view += m.detailOutput + "\n"
 	}
 
-	if m.zigDone {
-		view += "✓ Zig installed successfully\n"
-	}
-	if m.zlsDone {
-		view += "✓ ZLS installed successfully\n"
-	}
+	view += m.getCompletionInfo(false)
 
 	view += "\nPress q to quit\n"
 	return view
@@ -141,11 +148,10 @@ func (m Model) plainView() string {
 // colorView renders the UI with colors
 func (m Model) colorView() string {
 	docStyle := m.styles.Document
-
 	titleBar := m.styles.Title.Render(" ✨ Zig & ZLS Installer ✨ ")
 	separator := m.styles.Separator.Render(strings.Repeat("─", 40))
 
-	if m.quit {
+	if m.state == StateQuit || m.state == StateComplete || m.state == StateError {
 		if m.err != nil {
 			return docStyle.Render(
 				titleBar + "\n\n" +
@@ -157,25 +163,17 @@ func (m Model) colorView() string {
 	}
 
 	var statusDisplay string
-	if m.installing {
+	switch m.state {
+	case StateInit, StateInstalling:
 		statusDisplay = fmt.Sprintf("%s %s", m.spinner.View(), m.styles.Status.Render(m.status))
-	} else {
+	default:
 		statusDisplay = m.styles.Status.Render(m.status)
-	}
-
-	var completionInfo string
-	if m.zigDone {
-		completionInfo += m.styles.Success.Render("✓ Zig installed successfully") + "\n"
-	}
-	if m.zlsDone {
-		completionInfo += m.styles.Success.Render("✓ ZLS installed successfully") + "\n"
 	}
 
 	// Add detailed output if verbose mode is enabled
 	var detailSection string
 	if m.config.Verbose && m.detailOutput != "" {
 		detailStyle := m.styles.Detail
-
 		detailSection = m.styles.Subtitle.Render("Details:") + "\n" +
 			detailStyle.Render(m.detailOutput) + "\n"
 	}
@@ -185,8 +183,30 @@ func (m Model) colorView() string {
 	return docStyle.Render(
 		titleBar + "\n\n" +
 			statusDisplay + "\n\n" +
-			completionInfo +
+			m.getCompletionInfo(true) +
 			detailSection +
 			separator + "\n" +
 			footerText)
+}
+
+// getCompletionInfo returns the completion messages based on state and config
+func (m Model) getCompletionInfo(colored bool) string {
+	if m.state == StateError || m.state == StateQuit || m.state == StateComplete {
+		return ""
+	}
+
+	switch m.state {
+	case StateZigDone:
+		if colored {
+			return m.styles.Success.Render("✓ Zig installed successfully") + "\n"
+		}
+		return "✓ Zig installed successfully\n"
+	case StateZLSDone:
+		if colored {
+			return m.styles.Success.Render("✓ ZLS installed successfully") + "\n"
+		}
+		return "✓ ZLS installed successfully\n"
+	}
+
+	return ""
 }
