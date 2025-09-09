@@ -41,7 +41,7 @@ jobs:
   build:
     name: Go build (${{ matrix.go-version }})
     runs-on: ubuntu-latest
-    depends_on:
+    needs:
       - lint
     strategy:
       matrix:
