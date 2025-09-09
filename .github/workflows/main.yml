@@ -12,8 +12,8 @@ on:
       - ".github/**"
 
 jobs:
-  go-lint:
-    name: Go Lint (Go ${{ matrix.go }})
+  lint:
+    name: Go Lint ( ${{ matrix.go }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -40,3 +40,28 @@ jobs:
           # Specify Go version to match our project's version
           skip-pkg-cache: true
           skip-build-cache: true
+
+  build:
+    name: Go build (${{ matrix.go}})
+    runs-on: ubuntu-latest
+    depends_on:
+      - lint
+    strategy:
+      matrix:
+        go-version: ['1.25', '1.24']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for getting version from git tags
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}  # Use matrix version
+
+      - name: Install just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
+      - name: Build for Linux
+        run: just build-linux
