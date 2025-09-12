@@ -26,6 +26,10 @@ help:
   @echo "  build-all               - Build for all platforms (linux, windows, mac)"
   @echo "  build-linux             - Build for Linux (amd64)"
   @echo "  build-mac               - Build for macOS (amd64)"
+  @echo "  lint                    - Run golangci-lint on the codebase"
+
+lint:
+    golangci-lint run ./...
 
 # Build for current platform
 build:
