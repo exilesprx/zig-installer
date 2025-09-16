@@ -87,7 +87,7 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	}
 
 	// Prepare directories
-	if err := os.MkdirAll(config.ZigDir, 0755); err != nil {
+	if err := os.MkdirAll(config.ZigDir, 0o755); err != nil {
 		return "", fmt.Errorf("could not create directory %s: %w", config.ZigDir, err)
 	}
 
@@ -146,8 +146,8 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	output, err := exec.Command("minisign", "-Vm", tarPath, "-P", config.ZigPubKey).CombinedOutput()
 	if err != nil {
 		// Clean up files if verification fails
-		os.Remove(tarPath)
-		os.Remove(sigPath)
+		_ = os.Remove(tarPath)
+		_ = os.Remove(sigPath)
 		sendDetailedOutputMsg(p, fmt.Sprintf("Verification failed: %s", output), config.Verbose)
 		return "", fmt.Errorf("signature verification failed: %w: %s", err, output)
 	}
@@ -155,7 +155,7 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	sendDetailedOutputMsg(p, string(output), config.Verbose)
 
 	// Remove signature file after verification
-	os.Remove(sigPath)
+	_ = os.Remove(sigPath)
 
 	// Extract Zig
 	p.Send(tui.StatusMsg("Extracting Zig..."))
@@ -170,7 +170,7 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	}
 
 	// Remove tar file after extraction
-	os.Remove(tarPath)
+	_ = os.Remove(tarPath)
 
 	// The extracted directory name is the same as the tarball name without the .tar.xz extension
 	extractedDir := strings.TrimSuffix(tarFile, ".tar.xz")
@@ -183,7 +183,7 @@ func InstallZig(p *tea.Program, config *config.Config, logger logger.ILogger, re
 	sendDetailedOutputMsg(p, fmt.Sprintf("Creating symlink from %s to %s", zigBinPath, linkPath), config.Verbose)
 
 	if _, err := os.Stat(linkPath); err == nil {
-		os.Remove(linkPath)
+		_ = os.Remove(linkPath)
 	}
 	if err := os.Symlink(zigBinPath, linkPath); err != nil {
 		return "", fmt.Errorf("could not create symbolic link: %w", err)

@@ -113,7 +113,7 @@ func (c *Config) GenerateEnvFile() error {
 	if err != nil {
 		return fmt.Errorf("could not create .env file: %w", err)
 	}
-	defer f.Close()
+	defer func() { f.Close() }()
 
 	for _, line := range defaults {
 		if _, err := f.WriteString(line + "\n"); err != nil {
@@ -141,14 +141,14 @@ func (c *Config) EnsureDirectories() error {
 	dirs := []string{c.ZigDir, c.ZLSDir}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 
 	if _, err := os.Stat(c.BinDir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(c.BinDir, 0755); err != nil {
+			if err := os.MkdirAll(c.BinDir, 0o755); err != nil {
 				return fmt.Errorf("failed to create bin directory %s: %w", c.BinDir, err)
 			}
 		} else {

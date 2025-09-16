@@ -28,6 +28,9 @@ help:
   @echo "  build-mac               - Build for macOS (amd64)"
   @echo "  lint                    - Run golangci-lint on the codebase"
 
+fmt:
+    gofumpt -l -w .
+
 lint:
     golangci-lint run ./...
 

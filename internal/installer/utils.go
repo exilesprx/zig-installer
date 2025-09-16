@@ -25,7 +25,7 @@ func getZigVersion(zigIndexURL string, requestedVersion string) (*ZigVersionInfo
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
