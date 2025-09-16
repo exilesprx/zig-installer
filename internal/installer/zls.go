@@ -16,7 +16,7 @@ import (
 // InstallZLS handles the ZLS installation process
 func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zigVersion string) error {
 	// Prepare directories
-	if err := os.MkdirAll(config.ZLSDir, 0755); err != nil {
+	if err := os.MkdirAll(config.ZLSDir, 0o755); err != nil {
 		return fmt.Errorf("could not create directory %s: %w", config.ZLSDir, err)
 	}
 

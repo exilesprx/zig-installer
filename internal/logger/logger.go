@@ -42,7 +42,7 @@ func NewFileLogger(logFile string, enableLog bool) (*FileLogger, error) {
 	logPath := filepath.Join(execDir, logFile)
 
 	// Open log file for appending
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
