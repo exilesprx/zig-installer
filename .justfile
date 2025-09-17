@@ -32,7 +32,7 @@ fmt:
     gofumpt -l -w .
 
 lint:
-    golangci-lint run ./...
+    golangci-lint run -v ./...
 
 # Build for current platform
 build:
