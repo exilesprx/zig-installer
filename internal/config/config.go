@@ -113,7 +113,7 @@ func (c *Config) GenerateEnvFile() error {
 	if err != nil {
 		return fmt.Errorf("could not create .env file: %w", err)
 	}
-	defer func() { f.Close() }()
+	defer func() { _ = f.Close() }()
 
 	for _, line := range defaults {
 		if _, err := f.WriteString(line + "\n"); err != nil {

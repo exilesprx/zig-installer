@@ -172,7 +172,7 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 	sendDetailedOutputMsg(p, fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath), config.Verbose)
 
 	if _, err := os.Stat(linkPath); err == nil {
-		os.Remove(linkPath)
+		_ = os.Remove(linkPath)
 		sendDetailedOutputMsg(p, fmt.Sprintf("Removed existing symlink at %s", linkPath), config.Verbose)
 	}
 

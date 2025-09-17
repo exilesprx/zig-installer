@@ -43,7 +43,7 @@ You can specify a version to install using --version, otherwise the latest maste
 				fmt.Printf("Error initializing: %v\n", err)
 				os.Exit(1)
 			}
-			defer func() { log.Close() }()
+			defer func() { _ = log.Close() }()
 
 			if cfg.GenerateEnv {
 				if err := cfg.GenerateEnvFile(); err != nil {
