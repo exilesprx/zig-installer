@@ -142,14 +142,29 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 
 	PrintTask("Build details", "Info", fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir))
 
-	cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe")
-	cmd.Dir = config.ZLSDir
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		PrintTask("ZLS build", "Failed", fmt.Sprintf("Error building ZLS: %s", output))
-		return fmt.Errorf("could not build ZLS: %w", err)
+	// Stream output in real-time if verbose mode is enabled
+	if globalConfig != nil && globalConfig.Verbose {
+		cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe", "--verbose")
+		cmd.Dir = config.ZLSDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			PrintTask("ZLS build", "Failed", fmt.Sprintf("Error building ZLS: %v", err))
+			return fmt.Errorf("could not build ZLS: %w", err)
+		}
+	} else {
+		// Capture output for error reporting only
+		cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe")
+		cmd.Dir = config.ZLSDir
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			PrintTask("ZLS build", "Failed", fmt.Sprintf("Error building ZLS: %s", output))
+			return fmt.Errorf("could not build ZLS: %w", err)
+		}
 	}
-	PrintTask("ZLS build", "Success", fmt.Sprintf("ZLS built successfully"))
+
+	PrintTask("ZLS build", "Success", "ZLS built successfully")
 
 	// Set ownership of the build output
 	buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
@@ -170,9 +185,14 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 
 	PrintTask("ZLS symlink", "In progress", fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath))
 
-	if _, err := os.Stat(linkPath); err == nil {
-		_ = os.Remove(linkPath)
+	// Remove existing symlink/file if it exists
+	if _, err := os.Lstat(linkPath); err == nil {
+		if err := os.Remove(linkPath); err != nil {
+			PrintTask("ZLS symlink", "Failed", fmt.Sprintf("Failed to remove existing symlink: %v", err))
+			return fmt.Errorf("could not remove existing symlink: %w", err)
+		}
 	}
+
 	if err := os.Symlink(zlsBinPath, linkPath); err != nil {
 		return fmt.Errorf("could not create symbolic link: %w", err)
 	}
