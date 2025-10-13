@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/installer"
 	"github.com/exilesprx/zig-install/internal/logger"
@@ -90,60 +89,57 @@ You can specify a version to install using --version, otherwise the latest maste
 	return ic
 }
 
-// runInstallation starts the TUI installation process
+// runInstallation starts the installation process with simple, clean output
 func runInstallation(config *config.Config, styles *tui.Styles, logger logger.ILogger, zigVersion string) {
-	initialModel := tui.NewModel(config, styles, logger)
-	p := tea.NewProgram(initialModel)
+	// Set global config for installers to use
+	installer.SetGlobalConfig(config, styles)
 
-	go func() {
-		logger.LogInfo("Starting installation process")
+	// System check
+	installer.PrintTask("System check", "✓ Success", "Dependencies verified, ready to install")
 
-		// Store Zig version to match with ZLS
-		if !config.ZLSOnly {
-			logger.LogInfo("Starting Zig installation")
-			p.Send(tui.StatusMsg("Installing Zig..."))
-			var err error
-			zigVersion, err = installer.InstallZig(p, config, logger, zigVersion)
-			if err != nil {
-				logger.LogError("Zig installation failed: %v", err)
-				p.Send(tui.ErrorMsg(err))
-				return
-			}
-			logger.LogInfo("Zig installation completed successfully")
-			p.Send(tui.ZigDoneMsg{})
-		} else {
-			// If only installing ZLS, get the current Zig version
-			zigCmd := exec.Command("zig", "version")
-			output, err := zigCmd.Output()
-			if err != nil {
-				logger.LogError("Failed to get Zig version: %v", err)
-				p.Send(tui.ErrorMsg(fmt.Errorf("failed to get Zig version: %w", err)))
-				return
-			}
-			zigVersion = strings.TrimSpace(string(output))
+	// Store Zig version to match with ZLS
+	if !config.ZLSOnly {
+		logger.LogInfo("Starting Zig installation")
+		installer.PrintTask("Zig installation start", "→ Starting", "Beginning Zig installation process")
+
+		var err error
+		zigVersion, err = installer.InstallZig(nil, config, logger, zigVersion)
+		if err != nil {
+			logger.LogError("Zig installation failed: %v", err)
+			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
+			return
 		}
-
-		if !config.ZigOnly {
-			logger.LogInfo("Starting ZLS installation")
-			p.Send(tui.StatusMsg("Installing ZLS..."))
-			if err := installer.InstallZLS(p, config, logger, zigVersion); err != nil {
-				logger.LogError("ZLS installation failed: %v", err)
-				p.Send(tui.ErrorMsg(err))
-				return
-			}
-			logger.LogInfo("ZLS installation completed successfully")
-			p.Send(tui.ZLSDoneMsg{})
+		logger.LogInfo("Zig installation completed successfully")
+		installer.PrintTask("Zig installation", "✓ Success", "Zig compiler installed and configured")
+	} else {
+		// If only installing ZLS, get the current Zig version
+		zigCmd := exec.Command("zig", "version")
+		output, err := zigCmd.Output()
+		if err != nil {
+			logger.LogError("Failed to get Zig version: %v", err)
+			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: failed to get Zig version: %v", err)))
+			return
 		}
-
-		logger.LogInfo("Installation process completed successfully")
-		p.Send(tui.InstallCompleteMsg("Installation completed successfully! 🎉"))
-	}()
-
-	if _, err := p.Run(); err != nil {
-		logger.LogError("Error running program: %v", err)
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
+		zigVersion = strings.TrimSpace(string(output))
 	}
+
+	if !config.ZigOnly {
+		logger.LogInfo("Starting ZLS installation")
+		installer.PrintTask("ZLS installation start", "→ Starting", "Beginning ZLS installation process")
+
+		if err := installer.InstallZLS(nil, config, logger, zigVersion); err != nil {
+			logger.LogError("ZLS installation failed: %v", err)
+			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
+			return
+		}
+		logger.LogInfo("ZLS installation completed successfully")
+		installer.PrintTask("ZLS installation", "✓ Success", "ZLS language server installed and configured")
+	}
+
+	logger.LogInfo("Installation process completed successfully")
+	fmt.Println()
+	fmt.Println(styles.Success.Render("Installation completed successfully! 🎉"))
+	fmt.Println(styles.Separator.Render(strings.Repeat("─", 40)))
 }
 
 // checkIsRoot verifies the script is running as root

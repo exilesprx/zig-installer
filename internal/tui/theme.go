@@ -110,8 +110,6 @@ func NewStyles(colors *Colors) *Styles {
 		Spinner: lipgloss.NewStyle().
 			Foreground(colors.Sapphire),
 		Detail: lipgloss.NewStyle().
-			MarginTop(1).
-			MarginBottom(1).
 			Foreground(colors.Text),
 		Footer: lipgloss.NewStyle().
 			Foreground(colors.Subtext1),

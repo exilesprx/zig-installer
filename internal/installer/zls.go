@@ -7,14 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/logger"
-	"github.com/exilesprx/zig-install/internal/tui"
 )
 
 // InstallZLS handles the ZLS installation process
-func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zigVersion string) error {
+func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zigVersion string) error {
 	// Prepare directories
 	if err := os.MkdirAll(config.ZLSDir, 0o755); err != nil {
 		return fmt.Errorf("could not create directory %s: %w", config.ZLSDir, err)
@@ -28,13 +26,13 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 
 	// Set initial directory ownership
 	if user != "" {
-		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user), config.Verbose)
+		PrintTask("Directory setup", "→ In progress", fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user))
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error setting ownership: %s", output), config.Verbose)
+			PrintTask("Directory setup", "✗ Failed", fmt.Sprintf("Error setting ownership: %s", output))
 			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
 		} else {
-			sendDetailedOutputMsg(p, string(output), config.Verbose)
+			PrintTask("Directory setup", "✓ Success", "Directory ownership configured")
 		}
 	}
 
@@ -49,138 +47,181 @@ func InstallZLS(p *tea.Program, config *config.Config, logger logger.ILogger, zi
 		// Verify it's the correct repo
 		cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 		cmd.Dir = config.ZLSDir
-		if output, err := cmd.CombinedOutput(); err == nil && strings.Contains(string(output), "zigtools/zls") {
+		output, err := cmd.Output()
+		if err == nil && strings.Contains(string(output), "zigtools/zls") {
 			isRepoCloned = true
+			PrintTask("Repository check", "✓ Success", "ZLS repository already exists")
 		}
 	}
 
-	// Clone repository if it doesn't exist
 	if !isRepoCloned {
-		p.Send(tui.StatusMsg("Cloning ZLS repository..."))
+		PrintTask("Repository clone", "→ In progress", "Cloning ZLS repository...")
 
-		// Clean directory if it exists but isn't a valid repo
-		if err := os.RemoveAll(config.ZLSDir); err != nil {
-			return fmt.Errorf("could not clean ZLS directory: %w", err)
-		}
-
+		// Clone the repository
 		cmd := exec.Command("git", "clone", "https://github.com/zigtools/zls.git", config.ZLSDir)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error cloning repository: %s", output), config.Verbose)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			PrintTask("Repository clone", "✗ Failed", fmt.Sprintf("Error cloning repository: %s", output))
 			return fmt.Errorf("could not clone ZLS repository: %w", err)
 		}
+
+		PrintTask("ZLS clone", "✓ Success", fmt.Sprintf("Cloned repository to %s", config.ZLSDir))
 	}
 
-	// Handle version-specific installation
+	// Handle version-specific setup
 	if isSpecificVersion {
-		p.Send(tui.StatusMsg(fmt.Sprintf("Setting up ZLS version %s...", version)))
+		PrintTask("Version setup", "→ In progress", fmt.Sprintf("Setting up ZLS version %s...", version))
 
-		// Fetch tags
-		fetchCmd := exec.Command("git", "fetch", "--tags")
-		fetchCmd.Dir = config.ZLSDir
-		if output, err := fetchCmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error fetching tags: %s", output), config.Verbose)
+		// Fetch all tags
+		cmd := exec.Command("git", "fetch", "--tags")
+		cmd.Dir = config.ZLSDir
+		if output, err := cmd.CombinedOutput(); err != nil {
+			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Error fetching tags: %s", output))
 			return fmt.Errorf("could not fetch tags: %w", err)
 		}
 
-		// Check if tag exists
-		checkCmd := exec.Command("git", "rev-parse", "--verify", "refs/tags/"+version)
-		checkCmd.Dir = config.ZLSDir
-		if err := checkCmd.Run(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error checking out version: %s", err), config.Verbose)
-			return fmt.Errorf("ZLS version %s not found", version)
+		// Verify the version exists
+		cmd = exec.Command("git", "tag", "-l", version)
+		cmd.Dir = config.ZLSDir
+		output, err := cmd.Output()
+		if err != nil || len(strings.TrimSpace(string(output))) == 0 {
+			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Version %s not found", version))
+			return fmt.Errorf("version %s not found in ZLS repository", version)
 		}
 
 		// Checkout the specific version
-		checkoutCmd := exec.Command("git", "checkout", version)
-		checkoutCmd.Dir = config.ZLSDir
-		if output, err := checkoutCmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error checking out version: %s", output), config.Verbose)
+		cmd = exec.Command("git", "checkout", version)
+		cmd.Dir = config.ZLSDir
+		if output, err := cmd.CombinedOutput(); err != nil {
+			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Error checking out version: %s", output))
 			return fmt.Errorf("could not checkout version %s: %w", version, err)
 		}
-	} else {
-		// Just update to latest master
-		p.Send(tui.StatusMsg("Setting up latest ZLS..."))
 
-		// First try to checkout master/main
-		checkoutCmd := exec.Command("git", "checkout", "master")
-		checkoutCmd.Dir = config.ZLSDir
-		if err := checkoutCmd.Run(); err != nil {
-			// Try main if master fails
-			checkoutCmd = exec.Command("git", "checkout", "main")
-			checkoutCmd.Dir = config.ZLSDir
-			if err := checkoutCmd.Run(); err != nil {
-				return fmt.Errorf("could not checkout master/main branch")
+		PrintTask("ZLS version", "✓ Success", fmt.Sprintf("Checked out version %s", version))
+	} else {
+		PrintTask("Latest setup", "→ In progress", "Setting up latest ZLS...")
+
+		// For latest version, pull the latest changes
+		if isRepoCloned {
+			// Reset to ensure clean state
+			cmd := exec.Command("git", "reset", "--hard", "HEAD")
+			cmd.Dir = config.ZLSDir
+			cmd.Run()
+
+			// Switch to master and pull latest
+			cmd = exec.Command("git", "checkout", "master")
+			cmd.Dir = config.ZLSDir
+			cmd.Run()
+
+			cmd = exec.Command("git", "pull", "origin", "master")
+			cmd.Dir = config.ZLSDir
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				PrintTask("Latest setup", "✗ Failed", fmt.Sprintf("Error pulling latest changes: %s", output))
+				return fmt.Errorf("could not pull latest changes: %w", err)
 			}
 		}
 
-		// Pull latest changes
-		pullCmd := exec.Command("git", "pull")
-		pullCmd.Dir = config.ZLSDir
-		if output, err := pullCmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error pulling latest changes: %s", output), config.Verbose)
-			return fmt.Errorf("could not pull latest changes: %w", err)
-		}
+		PrintTask("ZLS latest", "✓ Success", "Updated to latest version")
 	}
 
-	// Set ownership after git operations if not root user
+	// Set ownership after git operations
 	if user != "" {
-		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir), config.Verbose)
+		PrintTask("Ownership update", "→ In progress", fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir))
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error: %s", output), config.Verbose)
-			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
+			PrintTask("Ownership update", "✗ Failed", fmt.Sprintf("Error: %s", output))
+			return fmt.Errorf("could not set ownership after git operations: %w", err)
 		} else {
-			sendDetailedOutputMsg(p, string(output), config.Verbose)
+			PrintTask("Ownership update", "✓ Success", "Repository ownership updated")
 		}
 	}
 
 	// Build ZLS
-	p.Send(tui.StatusMsg("Building ZLS..."))
+	PrintTask("ZLS build", "→ In progress", "Building ZLS...")
 
-	sendDetailedOutputMsg(p, fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir), config.Verbose)
+	PrintTask("Build details", "→ Info", fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir))
 
 	cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe")
 	cmd.Dir = config.ZLSDir
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		sendDetailedOutputMsg(p, fmt.Sprintf("Error building ZLS: %s", output), config.Verbose)
+		PrintTask("ZLS build", "✗ Failed", fmt.Sprintf("Error building ZLS: %s", output))
 		return fmt.Errorf("could not build ZLS: %w", err)
 	}
+	PrintTask("ZLS build", "✓ Success", fmt.Sprintf("ZLS built successfully"))
 
-	sendDetailedOutputMsg(p, string(output), config.Verbose)
-
-	// Set ownership after building if not root user
-	if user != "" {
-		buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
-		sendDetailedOutputMsg(p, fmt.Sprintf("Setting ownership of build output in %s", buildOutDir), config.Verbose)
+	// Set ownership of the build output
+	buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
+	if user != "" && isDirectory(buildOutDir) {
+		PrintTask("Build ownership", "→ In progress", fmt.Sprintf("Setting ownership of build output in %s", buildOutDir))
 		cmd := exec.Command("chown", "-R", user+":"+user, buildOutDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			sendDetailedOutputMsg(p, fmt.Sprintf("Error setting ownership: %s", output), config.Verbose)
+			PrintTask("Build ownership", "✗ Failed", fmt.Sprintf("Error setting ownership: %s", output))
 			return fmt.Errorf("could not set ownership of build output: %w", err)
 		} else {
-			sendDetailedOutputMsg(p, string(output), config.Verbose)
+			PrintTask("Build ownership", "✓ Success", "Build output ownership configured")
 		}
 	}
 
-	// Create symbolic link
+	// Create symbolic link to ZLS binary
 	zlsBinPath := filepath.Join(config.ZLSDir, "zig-out", "bin", "zls")
 	linkPath := filepath.Join(config.BinDir, "zls")
 
-	p.Send(tui.StatusMsg("Creating symbolic link..."))
-
-	sendDetailedOutputMsg(p, fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath), config.Verbose)
+	PrintTask("ZLS symlink", "→ In progress", fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath))
 
 	if _, err := os.Stat(linkPath); err == nil {
 		_ = os.Remove(linkPath)
-		sendDetailedOutputMsg(p, fmt.Sprintf("Removed existing symlink at %s", linkPath), config.Verbose)
 	}
-
 	if err := os.Symlink(zlsBinPath, linkPath); err != nil {
 		return fmt.Errorf("could not create symbolic link: %w", err)
 	}
 
-	sendDetailedOutputMsg(p, fmt.Sprintf("Symlink created at %s", linkPath), config.Verbose)
+	PrintTask("ZLS symbolic link", "✓ Success", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zlsBinPath))
 
 	return nil
+}
+
+// isDirectory checks if the given path is a directory
+func isDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
+// convertToSemanticVersion converts Zig version format to ZLS tag format
+func convertToSemanticVersion(zigVersion string) string {
+	if zigVersion == "" {
+		return ""
+	}
+
+	// Handle master/dev versions specially - they should use master branch
+	if zigVersion == "master" || strings.Contains(zigVersion, "-dev.") {
+		return "master"
+	}
+
+	// Convert input version to semantic version format
+	version := zigVersion
+
+	// Strip pre-release suffix (after '-')
+	if idx := strings.Index(version, "-"); idx != -1 {
+		version = version[:idx]
+	}
+
+	// Strip build metadata (after '+')
+	if idx := strings.Index(version, "+"); idx != -1 {
+		version = version[:idx]
+	}
+
+	// Split into components
+	parts := strings.Split(version, ".")
+	if len(parts) >= 3 {
+		return fmt.Sprintf("%s.%s.%s", parts[0], parts[1], parts[2])
+	}
+	if len(parts) == 2 {
+		return fmt.Sprintf("%s.%s.0", parts[0], parts[1])
+	}
+	return ""
 }

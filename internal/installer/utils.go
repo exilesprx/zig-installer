@@ -8,15 +8,42 @@ import (
 	"os/exec"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/exilesprx/zig-install/internal/config"
+	"github.com/exilesprx/zig-install/internal/tui"
 )
 
-// sendDetailedOutputMsg sends detailed output messages to the program if verbose mode is enabled
-func sendDetailedOutputMsg(p *tea.Program, msg string, verbose bool) {
-	if !verbose || len(msg) == 0 {
+// Global variable to hold styles for printing
+var globalStyles *tui.Styles
+var globalConfig *config.Config
+
+// SetGlobalConfig sets the global config and styles for task printing
+func SetGlobalConfig(config *config.Config, styles *tui.Styles) {
+	globalConfig = config
+	globalStyles = styles
+}
+
+// PrintTask prints a task completion message with optional detailed output
+func PrintTask(name, status, output string) {
+	if globalConfig == nil || globalStyles == nil {
+		// Fallback to simple print if globals aren't set
+		fmt.Printf("%s %s\n", status, name)
+		if output != "" {
+			fmt.Printf("  %s\n", output)
+		}
 		return
 	}
-	p.Send(msg)
+
+	if globalConfig.NoColor {
+		fmt.Printf("%s %s\n", status, name)
+		if output != "" && globalConfig.Verbose {
+			fmt.Printf("  %s\n", output)
+		}
+	} else {
+		fmt.Println(globalStyles.Success.Render(fmt.Sprintf("%s %s", status, name)))
+		if output != "" && globalConfig.Verbose {
+			fmt.Println(globalStyles.Detail.Render(fmt.Sprintf("  %s", output)))
+		}
+	}
 }
 
 // getZigVersion fetches version information from ziglang.org
@@ -77,32 +104,4 @@ func isZigInstalled(version string) bool {
 	}
 
 	return strings.HasPrefix(installedVersion, version)
-}
-
-// convertToSemanticVersion converts a Zig version to a ZLS tag format
-func convertToSemanticVersion(zigVersion string) string {
-	if zigVersion == "" {
-		return ""
-	}
-
-	// Handle master/dev versions specially
-	if zigVersion == "master" || strings.Contains(zigVersion, "-dev.") {
-		return "master"
-	}
-
-	// Convert input version to semantic version format
-	version := zigVersion
-	if idx := strings.Index(version, "-"); idx != -1 {
-		version = version[:idx]
-	}
-
-	// Split into components
-	parts := strings.Split(version, ".")
-	if len(parts) >= 3 {
-		return fmt.Sprintf("%s.%s.%s", parts[0], parts[1], parts[2])
-	}
-	if len(parts) == 2 {
-		return fmt.Sprintf("%s.%s.0", parts[0], parts[1])
-	}
-	return ""
 }
