@@ -26,13 +26,13 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 
 	// Set initial directory ownership
 	if user != "" {
-		PrintTask("Directory setup", "→ In progress", fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user))
+		PrintTask("Directory setup", "In progress", fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user))
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Directory setup", "✗ Failed", fmt.Sprintf("Error setting ownership: %s", output))
+			PrintTask("Directory setup", "Failed", fmt.Sprintf("Error setting ownership: %s", output))
 			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
 		} else {
-			PrintTask("Directory setup", "✓ Success", "Directory ownership configured")
+			PrintTask("Directory setup", "Success", "Directory ownership configured")
 		}
 	}
 
@@ -50,33 +50,33 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 		output, err := cmd.Output()
 		if err == nil && strings.Contains(string(output), "zigtools/zls") {
 			isRepoCloned = true
-			PrintTask("Repository check", "✓ Success", "ZLS repository already exists")
+			PrintTask("Repository check", "Success", "ZLS repository already exists")
 		}
 	}
 
 	if !isRepoCloned {
-		PrintTask("Repository clone", "→ In progress", "Cloning ZLS repository...")
+		PrintTask("Repository clone", "In progress", "Cloning ZLS repository...")
 
 		// Clone the repository
 		cmd := exec.Command("git", "clone", "https://github.com/zigtools/zls.git", config.ZLSDir)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			PrintTask("Repository clone", "✗ Failed", fmt.Sprintf("Error cloning repository: %s", output))
+			PrintTask("Repository clone", "Failed", fmt.Sprintf("Error cloning repository: %s", output))
 			return fmt.Errorf("could not clone ZLS repository: %w", err)
 		}
 
-		PrintTask("ZLS clone", "✓ Success", fmt.Sprintf("Cloned repository to %s", config.ZLSDir))
+		PrintTask("ZLS clone", "Success", fmt.Sprintf("Cloned repository to %s", config.ZLSDir))
 	}
 
 	// Handle version-specific setup
 	if isSpecificVersion {
-		PrintTask("Version setup", "→ In progress", fmt.Sprintf("Setting up ZLS version %s...", version))
+		PrintTask("Version setup", "In progress", fmt.Sprintf("Setting up ZLS version %s...", version))
 
 		// Fetch all tags
 		cmd := exec.Command("git", "fetch", "--tags")
 		cmd.Dir = config.ZLSDir
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Error fetching tags: %s", output))
+			PrintTask("Version setup", "Failed", fmt.Sprintf("Error fetching tags: %s", output))
 			return fmt.Errorf("could not fetch tags: %w", err)
 		}
 
@@ -85,7 +85,7 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 		cmd.Dir = config.ZLSDir
 		output, err := cmd.Output()
 		if err != nil || len(strings.TrimSpace(string(output))) == 0 {
-			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Version %s not found", version))
+			PrintTask("Version setup", "Failed", fmt.Sprintf("Version %s not found", version))
 			return fmt.Errorf("version %s not found in ZLS repository", version)
 		}
 
@@ -93,13 +93,13 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 		cmd = exec.Command("git", "checkout", version)
 		cmd.Dir = config.ZLSDir
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Version setup", "✗ Failed", fmt.Sprintf("Error checking out version: %s", output))
+			PrintTask("Version setup", "Failed", fmt.Sprintf("Error checking out version: %s", output))
 			return fmt.Errorf("could not checkout version %s: %w", version, err)
 		}
 
-		PrintTask("ZLS version", "✓ Success", fmt.Sprintf("Checked out version %s", version))
+		PrintTask("ZLS version", "Success", fmt.Sprintf("Checked out version %s", version))
 	} else {
-		PrintTask("Latest setup", "→ In progress", "Setting up latest ZLS...")
+		PrintTask("Latest setup", "In progress", "Setting up latest ZLS...")
 
 		// For latest version, pull the latest changes
 		if isRepoCloned {
@@ -117,50 +117,50 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 			cmd.Dir = config.ZLSDir
 			output, err := cmd.CombinedOutput()
 			if err != nil {
-				PrintTask("Latest setup", "✗ Failed", fmt.Sprintf("Error pulling latest changes: %s", output))
+				PrintTask("Latest setup", "Failed", fmt.Sprintf("Error pulling latest changes: %s", output))
 				return fmt.Errorf("could not pull latest changes: %w", err)
 			}
 		}
 
-		PrintTask("ZLS latest", "✓ Success", "Updated to latest version")
+		PrintTask("ZLS latest", "Success", "Updated to latest version")
 	}
 
 	// Set ownership after git operations
 	if user != "" {
-		PrintTask("Ownership update", "→ In progress", fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir))
+		PrintTask("Ownership update", "In progress", fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir))
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Ownership update", "✗ Failed", fmt.Sprintf("Error: %s", output))
+			PrintTask("Ownership update", "Failed", fmt.Sprintf("Error: %s", output))
 			return fmt.Errorf("could not set ownership after git operations: %w", err)
 		} else {
-			PrintTask("Ownership update", "✓ Success", "Repository ownership updated")
+			PrintTask("Ownership update", "Success", "Repository ownership updated")
 		}
 	}
 
 	// Build ZLS
-	PrintTask("ZLS build", "→ In progress", "Building ZLS...")
+	PrintTask("ZLS build", "In progress", "Building ZLS...")
 
-	PrintTask("Build details", "→ Info", fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir))
+	PrintTask("Build details", "Info", fmt.Sprintf("Running: zig build -Doptimize=ReleaseSafe in %s", config.ZLSDir))
 
 	cmd := exec.Command("zig", "build", "-Doptimize=ReleaseSafe")
 	cmd.Dir = config.ZLSDir
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		PrintTask("ZLS build", "✗ Failed", fmt.Sprintf("Error building ZLS: %s", output))
+		PrintTask("ZLS build", "Failed", fmt.Sprintf("Error building ZLS: %s", output))
 		return fmt.Errorf("could not build ZLS: %w", err)
 	}
-	PrintTask("ZLS build", "✓ Success", fmt.Sprintf("ZLS built successfully"))
+	PrintTask("ZLS build", "Success", fmt.Sprintf("ZLS built successfully"))
 
 	// Set ownership of the build output
 	buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
 	if user != "" && isDirectory(buildOutDir) {
-		PrintTask("Build ownership", "→ In progress", fmt.Sprintf("Setting ownership of build output in %s", buildOutDir))
+		PrintTask("Build ownership", "In progress", fmt.Sprintf("Setting ownership of build output in %s", buildOutDir))
 		cmd := exec.Command("chown", "-R", user+":"+user, buildOutDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Build ownership", "✗ Failed", fmt.Sprintf("Error setting ownership: %s", output))
+			PrintTask("Build ownership", "Failed", fmt.Sprintf("Error setting ownership: %s", output))
 			return fmt.Errorf("could not set ownership of build output: %w", err)
 		} else {
-			PrintTask("Build ownership", "✓ Success", "Build output ownership configured")
+			PrintTask("Build ownership", "Success", "Build output ownership configured")
 		}
 	}
 
@@ -168,7 +168,7 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 	zlsBinPath := filepath.Join(config.ZLSDir, "zig-out", "bin", "zls")
 	linkPath := filepath.Join(config.BinDir, "zls")
 
-	PrintTask("ZLS symlink", "→ In progress", fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath))
+	PrintTask("ZLS symlink", "In progress", fmt.Sprintf("Creating symlink from %s to %s", zlsBinPath, linkPath))
 
 	if _, err := os.Stat(linkPath); err == nil {
 		_ = os.Remove(linkPath)
@@ -177,7 +177,7 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, zig
 		return fmt.Errorf("could not create symbolic link: %w", err)
 	}
 
-	PrintTask("ZLS symbolic link", "✓ Success", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zlsBinPath))
+	PrintTask("ZLS symbolic link", "Success", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zlsBinPath))
 
 	return nil
 }

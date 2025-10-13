@@ -8,13 +8,16 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/exilesprx/zig-install/internal/config"
 	"github.com/exilesprx/zig-install/internal/tui"
 )
 
 // Global variable to hold styles for printing
-var globalStyles *tui.Styles
-var globalConfig *config.Config
+var (
+	globalStyles *tui.Styles
+	globalConfig *config.Config
+)
 
 // SetGlobalConfig sets the global config and styles for task printing
 func SetGlobalConfig(config *config.Config, styles *tui.Styles) {
@@ -22,26 +25,62 @@ func SetGlobalConfig(config *config.Config, styles *tui.Styles) {
 	globalStyles = styles
 }
 
-// PrintTask prints a task completion message with optional detailed output
+// PrintSection prints a top-level section header
+func PrintSection(sectionName string) {
+	if globalConfig == nil || globalStyles == nil {
+		fmt.Printf("==> %s\n", sectionName)
+		return
+	}
+
+	if globalConfig.NoColor {
+		fmt.Printf("==> %s\n", sectionName)
+	} else {
+		fmt.Printf("%s %s\n",
+			globalStyles.TopLevel.Render("==>"),
+			globalStyles.Grey.Render(sectionName))
+	}
+}
+
+// PrintTask prints a task completion message with optional detailed output as a sub-level item
 func PrintTask(name, status, output string) {
 	if globalConfig == nil || globalStyles == nil {
 		// Fallback to simple print if globals aren't set
-		fmt.Printf("%s %s\n", status, name)
+		fmt.Printf("  %s %s\n", status, name)
 		if output != "" {
-			fmt.Printf("  %s\n", output)
+			fmt.Printf("    %s\n", output)
 		}
 		return
 	}
 
 	if globalConfig.NoColor {
-		fmt.Printf("%s %s\n", status, name)
+		// Always print as sub-level with --> prefix
+		fmt.Printf("  --> %s %s\n", status, name)
 		if output != "" && globalConfig.Verbose {
-			fmt.Printf("  %s\n", output)
+			fmt.Printf("    %s\n", output)
 		}
 	} else {
-		fmt.Println(globalStyles.Success.Render(fmt.Sprintf("%s %s", status, name)))
+		// Color the status based on content
+		var statusColor lipgloss.Style
+
+		if strings.Contains(status, "Success") || strings.Contains(status, "Already installed") {
+			statusColor = globalStyles.Success // Green for success
+		} else if strings.Contains(status, "Failed") || strings.Contains(status, "Error") {
+			statusColor = globalStyles.Error // Red for errors
+		} else {
+			statusColor = globalStyles.Grey // Grey for other statuses
+		}
+
+		textColor := globalStyles.Grey // Grey for task names
+
+		// Print sub-level message with --> prefix
+		fmt.Printf("%s %s %s\n",
+			globalStyles.SubLevel.Render("  -->"),
+			statusColor.Render(status),
+			textColor.Render(name))
+
+		// Print additional output if present with more indentation
 		if output != "" && globalConfig.Verbose {
-			fmt.Println(globalStyles.Detail.Render(fmt.Sprintf("  %s", output)))
+			fmt.Printf("    %s\n", globalStyles.Grey.Render(output))
 		}
 	}
 }

@@ -48,6 +48,9 @@ type Styles struct {
 	Spinner   lipgloss.Style
 	Detail    lipgloss.Style
 	Footer    lipgloss.Style
+	TopLevel  lipgloss.Style // Yellow "==>" prefix for top-level messages
+	SubLevel  lipgloss.Style // Blue "  -->" prefix for sub-level messages
+	Grey      lipgloss.Style // Grey for other text
 }
 
 // NewMochaColors creates a new theme colors instance with Catppuccin Mocha palette
@@ -113,6 +116,12 @@ func NewStyles(colors *Colors) *Styles {
 			Foreground(colors.Text),
 		Footer: lipgloss.NewStyle().
 			Foreground(colors.Subtext1),
+		TopLevel: lipgloss.NewStyle().
+			Foreground(colors.Yellow),
+		SubLevel: lipgloss.NewStyle().
+			Foreground(colors.Blue),
+		Grey: lipgloss.NewStyle().
+			Foreground(colors.Overlay1),
 	}
 }
 
