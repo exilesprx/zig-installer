@@ -8,6 +8,8 @@ default: help
 module := "github.com/exilesprx/zig-install"
 package := module + "/cmd"
 config_package := module + "/internal/config"
+zig_path := "/opt/zig"
+zls_path := "/opt/zls"
 
 # Helper recipe to setup build environment (not called directly)
 _setup:
@@ -33,6 +35,19 @@ fmt:
 
 lint:
     golangci-lint run -v ./...
+
+clean:
+  @echo "Cleaning build artifacts"
+  rm -rf {{zls_path}}/.zig-cache {{zls_path}}/zig-out zig-install*
+
+uninstall:
+  @echo "Uninstalling zig-install and removing {{zig_path}} and {{zls_path}}"
+  #!/usr/bin/env bash
+  set -euo pipefail
+  zig_target=$(realpath "$(command -v zig)" 2>/dev/null)
+  zls_target=$(realpath "$(command -v zls)" 2>/dev/null)
+  [ -n "$zig_target" ] && [ -e "$zig_target" ] && [[ "$zig_target" == "$zig_path"/* ]] && rm -rf "$zig_target"
+  [ -n "$zls_target" ] && [ -e "$zls_target" ] && [[ "$zls_target" == "$zls_path"/* ]] && rm -rf "$zls_target"
 
 # Build for current platform
 build:
