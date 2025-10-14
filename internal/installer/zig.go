@@ -56,13 +56,13 @@ func getPlatformBuildInfo(versionInfo *ZigVersionInfo) (*ZigBuildInfo, error) {
 }
 
 // InstallZig handles the Zig installation process
-func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, requestedVersion string) (string, error) {
+func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, formatter OutputFormatter, requestedVersion string) (string, error) {
 	// Get the version info
 	msg := "Fetching latest Zig version..."
 	if requestedVersion != "" && requestedVersion != "master" {
 		msg = fmt.Sprintf("Fetching Zig version %s...", requestedVersion)
 	}
-	PrintTask("Version lookup", "In progress", msg)
+	formatter.PrintTask("Version lookup", "In progress", msg)
 
 	versionInfo, err := getZigVersion(config.ZigIndexURL, requestedVersion)
 	if err != nil {
@@ -70,7 +70,7 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 	}
 
 	version := versionInfo.Version
-	PrintTask("Version lookup", "Success", fmt.Sprintf("Using Zig version: %s", version))
+	formatter.PrintTask("Version lookup", "Success", fmt.Sprintf("Using Zig version: %s", version))
 
 	// Get platform-specific build info
 	buildInfo, err := getPlatformBuildInfo(versionInfo)
@@ -80,7 +80,7 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 
 	// Check if already installed
 	if isZigInstalled(version) {
-		PrintTask("Zig version check", "Already installed", fmt.Sprintf("Zig %s is already available", version))
+		formatter.PrintTask("Zig version check", "Already installed", fmt.Sprintf("Zig %s is already available", version))
 		return version, nil
 	}
 
@@ -97,13 +97,13 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 
 	// Set ownership
 	if user != "" {
-		PrintTask("Directory setup", "In progress", fmt.Sprintf("Setting ownership of %s to %s", config.ZigDir, user))
+		formatter.PrintTask("Directory setup", "In progress", fmt.Sprintf("Setting ownership of %s to %s", config.ZigDir, user))
 		cmd := exec.Command("chown", "-R", user+":"+user, config.ZigDir)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Directory setup", "Failed", fmt.Sprintf("Error setting ownership: %s", output))
+			formatter.PrintTask("Directory setup", "Failed", fmt.Sprintf("Error setting ownership: %s", output))
 			return "", fmt.Errorf("could not set ownership of %s: %w", config.ZigDir, err)
 		} else {
-			PrintTask("Directory setup", "Success", string(output))
+			formatter.PrintTask("Directory setup", "Success", string(output))
 		}
 	}
 
@@ -113,72 +113,72 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 	tarPath := filepath.Join(config.ZigDir, tarFile)
 	sigPath := tarPath + ".minisig"
 
-	PrintTask("Download", "In progress", fmt.Sprintf("Downloading Zig %s from %s", version, tarURL))
+	formatter.PrintTask("Download", "In progress", fmt.Sprintf("Downloading Zig %s from %s", version, tarURL))
 
 	// Stream wget output in real-time if verbose mode is enabled
-	if globalConfig != nil && globalConfig.Verbose {
+	if config.Verbose {
 		cmd := exec.Command("wget", "-O", tarPath, tarURL)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			PrintTask("Download", "Failed", fmt.Sprintf("Error downloading: %v", err))
+			formatter.PrintTask("Download", "Failed", fmt.Sprintf("Error downloading: %v", err))
 			return "", fmt.Errorf("could not download Zig: %w", err)
 		}
 	} else {
 		cmd := exec.Command("wget", "-O", tarPath, tarURL)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Download", "Failed", fmt.Sprintf("Error downloading: %s", output))
+			formatter.PrintTask("Download", "Failed", fmt.Sprintf("Error downloading: %s", output))
 			return "", fmt.Errorf("could not download Zig: %w", err)
 		}
 	}
-	PrintTask("Zig download", "Success", fmt.Sprintf("Downloaded %s (%s)", tarFile, buildInfo.Size))
+	formatter.PrintTask("Zig download", "Success", fmt.Sprintf("Downloaded %s (%s)", tarFile, buildInfo.Size))
 
 	// Download signature
-	PrintTask("Signature download", "In progress", fmt.Sprintf("Downloading signature from %s.minisig", tarURL))
+	formatter.PrintTask("Signature download", "In progress", fmt.Sprintf("Downloading signature from %s.minisig", tarURL))
 
 	// Stream wget output in real-time if verbose mode is enabled
-	if globalConfig != nil && globalConfig.Verbose {
+	if config.Verbose {
 		cmd := exec.Command("wget", "-O", sigPath, tarURL+".minisig")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			PrintTask("Signature download", "Failed", fmt.Sprintf("Error downloading signature: %v", err))
+			formatter.PrintTask("Signature download", "Failed", fmt.Sprintf("Error downloading signature: %v", err))
 			return "", fmt.Errorf("could not download Zig signature: %w", err)
 		}
 	} else {
 		cmd := exec.Command("wget", "-O", sigPath, tarURL+".minisig")
 		if output, err := cmd.CombinedOutput(); err != nil {
-			PrintTask("Signature download", "Failed", fmt.Sprintf("Error downloading signature: %s", output))
+			formatter.PrintTask("Signature download", "Failed", fmt.Sprintf("Error downloading signature: %s", output))
 			return "", fmt.Errorf("could not download Zig signature: %w", err)
 		}
 	}
-	PrintTask("Signature download", "Success", "Signature downloaded successfully")
+	formatter.PrintTask("Signature download", "Success", "Signature downloaded successfully")
 
 	// Verify signature
-	PrintTask("Signature verification", "In progress", fmt.Sprintf("Verifying %s with key", tarPath))
+	formatter.PrintTask("Signature verification", "In progress", fmt.Sprintf("Verifying %s with key", tarPath))
 
 	output, err := exec.Command("minisign", "-Vm", tarPath, "-P", config.ZigPubKey).CombinedOutput()
 	if err != nil {
 		// Clean up files if verification fails
 		_ = os.Remove(tarPath)
 		_ = os.Remove(sigPath)
-		PrintTask("Signature verification", "Failed", fmt.Sprintf("Verification failed: %s", output))
+		formatter.PrintTask("Signature verification", "Failed", fmt.Sprintf("Verification failed: %s", output))
 		return "", fmt.Errorf("signature verification failed: %w: %s", err, output)
 	}
-	PrintTask("Zig signature verification", "Success", fmt.Sprintf("Verified %s with public key", filepath.Base(tarPath)))
+	formatter.PrintTask("Zig signature verification", "Success", fmt.Sprintf("Verified %s with public key", filepath.Base(tarPath)))
 
 	// Remove signature file after verification
 	_ = os.Remove(sigPath)
 
 	// Extract Zig
-	PrintTask("Extraction", "In progress", fmt.Sprintf("Extracting %s to %s", tarPath, config.ZigDir))
+	formatter.PrintTask("Extraction", "In progress", fmt.Sprintf("Extracting %s to %s", tarPath, config.ZigDir))
 
 	output, err = exec.Command("tar", "-xf", tarPath, "-C", config.ZigDir).CombinedOutput()
 	if err != nil {
-		PrintTask("Extraction", "Failed", fmt.Sprintf("Extraction failed: %s", output))
+		formatter.PrintTask("Extraction", "Failed", fmt.Sprintf("Extraction failed: %s", output))
 		return "", fmt.Errorf("extraction failed: %w", err)
 	}
-	PrintTask("Zig extraction", "Success", fmt.Sprintf("Extracted to %s", config.ZigDir))
+	formatter.PrintTask("Zig extraction", "Success", fmt.Sprintf("Extracted to %s", config.ZigDir))
 
 	// Remove tar file after extraction
 	_ = os.Remove(tarPath)
@@ -190,12 +190,12 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 	zigBinPath := filepath.Join(config.ZigDir, extractedDir, "zig")
 	linkPath := filepath.Join(config.BinDir, "zig")
 
-	PrintTask("Symbolic link", "In progress", fmt.Sprintf("Creating symlink from %s to %s", zigBinPath, linkPath))
+	formatter.PrintTask("Symbolic link", "In progress", fmt.Sprintf("Creating symlink from %s to %s", zigBinPath, linkPath))
 
 	// Remove existing symlink/file if it exists
 	if _, err := os.Lstat(linkPath); err == nil {
 		if err := os.Remove(linkPath); err != nil {
-			PrintTask("Symbolic link", "Failed", fmt.Sprintf("Failed to remove existing symlink: %v", err))
+			formatter.PrintTask("Symbolic link", "Failed", fmt.Sprintf("Failed to remove existing symlink: %v", err))
 			return "", fmt.Errorf("could not remove existing symlink: %w", err)
 		}
 	}
@@ -203,7 +203,7 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, req
 	if err := os.Symlink(zigBinPath, linkPath); err != nil {
 		return "", fmt.Errorf("could not create symbolic link: %w", err)
 	}
-	PrintTask("Zig symbolic link", "Success", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zigBinPath))
+	formatter.PrintTask("Zig symbolic link", "Success", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zigBinPath))
 
 	return version, nil
 }

@@ -13,38 +13,46 @@ import (
 	"github.com/exilesprx/zig-install/internal/tui"
 )
 
-// Global variable to hold styles for printing
-var (
-	globalStyles *tui.Styles
-	globalConfig *config.Config
-)
+// OutputFormatter handles formatted output for installation tasks
+type OutputFormatter interface {
+	PrintSection(sectionName string)
+	PrintTask(name, status, output string)
+}
 
-// SetGlobalConfig sets the global config and styles for task printing
-func SetGlobalConfig(config *config.Config, styles *tui.Styles) {
-	globalConfig = config
-	globalStyles = styles
+// TaskFormatter implements OutputFormatter with styling support
+type TaskFormatter struct {
+	config *config.Config
+	styles *tui.Styles
+}
+
+// NewTaskFormatter creates a new TaskFormatter instance
+func NewTaskFormatter(config *config.Config, styles *tui.Styles) *TaskFormatter {
+	return &TaskFormatter{
+		config: config,
+		styles: styles,
+	}
 }
 
 // PrintSection prints a top-level section header
-func PrintSection(sectionName string) {
-	if globalConfig == nil || globalStyles == nil {
+func (tf *TaskFormatter) PrintSection(sectionName string) {
+	if tf.config == nil || tf.styles == nil {
 		fmt.Printf("==> %s\n", sectionName)
 		return
 	}
 
-	if globalConfig.NoColor {
+	if tf.config.NoColor {
 		fmt.Printf("==> %s\n", sectionName)
 	} else {
 		fmt.Printf("%s %s\n",
-			globalStyles.TopLevel.Render("==>"),
-			globalStyles.Grey.Render(sectionName))
+			tf.styles.TopLevel.Render("==>"),
+			tf.styles.Grey.Render(sectionName))
 	}
 }
 
 // PrintTask prints a task completion message with optional detailed output as a sub-level item
-func PrintTask(name, status, output string) {
-	if globalConfig == nil || globalStyles == nil {
-		// Fallback to simple print if globals aren't set
+func (tf *TaskFormatter) PrintTask(name, status, output string) {
+	if tf.config == nil || tf.styles == nil {
+		// Fallback to simple print if config/styles aren't set
 		fmt.Printf("  %s %s\n", status, name)
 		if output != "" {
 			fmt.Printf("    %s\n", output)
@@ -52,10 +60,10 @@ func PrintTask(name, status, output string) {
 		return
 	}
 
-	if globalConfig.NoColor {
+	if tf.config.NoColor {
 		// Always print as sub-level with --> prefix
 		fmt.Printf("  --> %s %s\n", status, name)
-		if output != "" && globalConfig.Verbose {
+		if output != "" && tf.config.Verbose {
 			fmt.Printf("    %s\n", output)
 		}
 	} else {
@@ -63,24 +71,24 @@ func PrintTask(name, status, output string) {
 		var statusColor lipgloss.Style
 
 		if strings.Contains(status, "Success") || strings.Contains(status, "Already installed") {
-			statusColor = globalStyles.Success // Green for success
+			statusColor = tf.styles.Success // Green for success
 		} else if strings.Contains(status, "Failed") || strings.Contains(status, "Error") {
-			statusColor = globalStyles.Error // Red for errors
+			statusColor = tf.styles.Error // Red for errors
 		} else {
-			statusColor = globalStyles.Grey // Grey for other statuses
+			statusColor = tf.styles.Grey // Grey for other statuses
 		}
 
-		textColor := globalStyles.Grey // Grey for task names
+		textColor := tf.styles.Grey // Grey for task names
 
 		// Print sub-level message with --> prefix
 		fmt.Printf("%s %s %s\n",
-			globalStyles.SubLevel.Render("  -->"),
+			tf.styles.SubLevel.Render("  -->"),
 			statusColor.Render(status),
 			textColor.Render(name))
 
 		// Print additional output if present with more indentation
-		if output != "" && globalConfig.Verbose {
-			fmt.Printf("    %s\n", globalStyles.Grey.Render(output))
+		if output != "" && tf.config.Verbose {
+			fmt.Printf("    %s\n", tf.styles.Grey.Render(output))
 		}
 	}
 }

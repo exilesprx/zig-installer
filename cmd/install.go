@@ -91,27 +91,27 @@ You can specify a version to install using --version, otherwise the latest maste
 
 // runInstallation starts the installation process with simple, clean output
 func runInstallation(config *config.Config, styles *tui.Styles, logger logger.ILogger, zigVersion string) {
-	// Set global config for installers to use
-	installer.SetGlobalConfig(config, styles)
+	// Create formatter instance for dependency injection
+	formatter := installer.NewTaskFormatter(config, styles)
 
 	// System check section
-	installer.PrintSection("System Check")
-	installer.PrintTask("Dependencies verified, ready to install", "Success", "")
+	formatter.PrintSection("System Check")
+	formatter.PrintTask("Dependencies verified, ready to install", "Success", "")
 
 	// Store Zig version to match with ZLS
 	if !config.ZLSOnly {
 		logger.LogInfo("Starting Zig installation")
-		installer.PrintSection("Zig Installation")
+		formatter.PrintSection("Zig Installation")
 
 		var err error
-		zigVersion, err = installer.InstallZig(nil, config, logger, zigVersion)
+		zigVersion, err = installer.InstallZig(nil, config, logger, formatter, zigVersion)
 		if err != nil {
 			logger.LogError("Zig installation failed: %v", err)
 			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
 			return
 		}
 		logger.LogInfo("Zig installation completed successfully")
-		installer.PrintTask("Zig compiler installed and configured", "Success", "")
+		formatter.PrintTask("Zig compiler installed and configured", "Success", "")
 	} else {
 		// If only installing ZLS, get the current Zig version
 		zigCmd := exec.Command("zig", "version")
@@ -126,15 +126,15 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 
 	if !config.ZigOnly {
 		logger.LogInfo("Starting ZLS installation")
-		installer.PrintSection("ZLS Installation")
+		formatter.PrintSection("ZLS Installation")
 
-		if err := installer.InstallZLS(nil, config, logger, zigVersion); err != nil {
+		if err := installer.InstallZLS(nil, config, logger, formatter, zigVersion); err != nil {
 			logger.LogError("ZLS installation failed: %v", err)
 			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
 			return
 		}
 		logger.LogInfo("ZLS installation completed successfully")
-		installer.PrintTask("ZLS language server installed and configured", "Success", "")
+		formatter.PrintTask("ZLS language server installed and configured", "Success", "")
 	}
 
 	logger.LogInfo("Installation process completed successfully")
