@@ -38,7 +38,7 @@ lint:
 
 clean:
   @echo "Cleaning build artifacts"
-  rm -rf {{zls_path}}/.zig-cache {{zls_path}}/zig-out zig-install
+  rm -rf {{zls_path}}/.zig-cache {{zls_path}}/zig-out zig-install-*
 
 install:
   @echo "Installing for current platform..."
