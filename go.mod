@@ -1,6 +1,6 @@
 module github.com/exilesprx/zig-install
 
-go 1.24.1
+go 1.25.2
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
