@@ -35,8 +35,7 @@ jobs:
         with:
           version: latest
           args: --timeout=5m
-          skip-pkg-cache: true
-          skip-build-cache: true
+          skip-cache: true
 
       - name: Tests
         run: go test ./... -v
