@@ -32,7 +32,10 @@ func TestTaskFormatter_PrintSection(t *testing.T) {
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Fatalf("Failed to copy output: %v", err)
+	}
 	output := buf.String()
 
 	expected := "==> Test Section\n"
@@ -62,7 +65,10 @@ func TestTaskFormatter_PrintTask(t *testing.T) {
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Fatalf("Failed to copy output: %v", err)
+	}
 	output := buf.String()
 
 	expected := "  --> Success Task Name\n"
@@ -92,7 +98,10 @@ func TestTaskFormatter_PrintTaskWithVerbose(t *testing.T) {
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Fatalf("Failed to copy output: %v", err)
+	}
 	output := buf.String()
 
 	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
@@ -129,7 +138,10 @@ func TestTaskFormatter_NilConfigAndStyles(t *testing.T) {
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Fatalf("Failed to copy output: %v", err)
+	}
 	output := buf.String()
 
 	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")

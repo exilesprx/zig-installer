@@ -106,12 +106,12 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, for
 			// Reset to ensure clean state
 			cmd := exec.Command("git", "reset", "--hard", "HEAD")
 			cmd.Dir = config.ZLSDir
-			cmd.Run()
+			_ = cmd.Run() // Ignore errors for reset as it's a cleanup operation
 
 			// Switch to master and pull latest
 			cmd = exec.Command("git", "checkout", "master")
 			cmd.Dir = config.ZLSDir
-			cmd.Run()
+			_ = cmd.Run() // Ignore errors for checkout as pull will handle it
 
 			cmd = exec.Command("git", "pull", "origin", "master")
 			cmd.Dir = config.ZLSDir
