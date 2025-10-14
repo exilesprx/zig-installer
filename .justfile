@@ -31,10 +31,10 @@ help:
   @echo "  lint                    - Run golangci-lint on the codebase"
 
 fmt:
-    gofumpt -l -w .
+  gofumpt -l -w .
 
 lint:
-    golangci-lint run -v ./...
+  golangci-lint run -v ./...
 
 clean:
   @echo "Cleaning build artifacts"
