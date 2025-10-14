@@ -40,6 +40,10 @@ clean:
   @echo "Cleaning build artifacts"
   rm -rf {{zls_path}}/.zig-cache {{zls_path}}/zig-out zig-install*
 
+install:
+  @echo "Installing for current platform..."
+  go install -ldflags="$(just _setup)"
+
 uninstall:
   @echo "Uninstalling zig-install and removing {{zig_path}} and {{zls_path}}"
   #!/usr/bin/env bash
