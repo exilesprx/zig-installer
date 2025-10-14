@@ -28,7 +28,7 @@ func TestTaskFormatter_PrintSection(t *testing.T) {
 	formatter.PrintSection("Test Section")
 
 	// Restore stdout and read captured output
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
@@ -61,7 +61,7 @@ func TestTaskFormatter_PrintTask(t *testing.T) {
 	formatter.PrintTask("Task Name", "Success", "Additional output")
 
 	// Restore stdout and read captured output
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
@@ -94,7 +94,7 @@ func TestTaskFormatter_PrintTaskWithVerbose(t *testing.T) {
 	formatter.PrintTask("Task Name", "Success", "Additional verbose output")
 
 	// Restore stdout and read captured output
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
@@ -134,7 +134,7 @@ func TestTaskFormatter_NilConfigAndStyles(t *testing.T) {
 	formatter.PrintTask("Task Name", "Success", "Additional output")
 
 	// Restore stdout and read captured output
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer

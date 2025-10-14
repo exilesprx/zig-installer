@@ -23,3 +23,6 @@
 # Allow internal directory and all its contents
 !internal/
 !internal/**
+
+# Allow golangci-lint configuration file
+.golangci.yml
