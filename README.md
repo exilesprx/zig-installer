@@ -31,7 +31,7 @@ Or use the justfile if available:
 just install
 ```
 
-> Note: using `go install` does not add build metadata like version information. To include that, use the justfile or build with ldflags. See details in "Build-time Configuration" section.
+> **Note**: using `go install` does not add build metadata like version information. To include that, use the justfile or build with ldflags. See details in "Build-time Configuration" section.
 
 3. Run the program with the desired options.
 
