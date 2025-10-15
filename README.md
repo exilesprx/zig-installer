@@ -19,17 +19,19 @@ Before running the program, ensure you have the following dependencies installed
 ## Installation
 
 1. Clone the repository or download the pre-built binary for your platform.
-2. If downloading the source code, build the program:
+2. If downloading the source code, build and install the program:
 
 ```bash
-go build
+go install
 ```
 
 Or use the justfile if available:
 
 ```bash
-just build
+just install
 ```
+
+Note: using `go install` does not add build metadata like version information. To include that, use the justfile or build with ldflags. See details in "Build-time Configuration" section.
 
 3. Run the program with the desired options.
 
@@ -69,6 +71,7 @@ Before running the program, it will check for required dependencies like `wget`,
 ### Configuration File (.env)
 
 You can create a `.env` file in the same directory as the executable in two ways:
+
 1. Use the `env` command to create a template:
    ```bash
    ./zig-install-linux-amd64 env
@@ -79,6 +82,7 @@ You can create a `.env` file in the same directory as the executable in two ways
    ```
 
 You can view your current configuration settings at any time using the `--settings` flag:
+
 ```bash
 ./zig-install-linux-amd64 install --settings
 ```
@@ -102,10 +106,10 @@ Creating a `.env` file is optional, but it allows for easy customization without
 When building from source, you can also customize some defaults using linker flags:
 
 ```bash
-go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.Version=VERSION'"
+go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.Version=VERSION' 'github.com/exilesprx/zig-install/internal/config.Commit=COMMIT' 'github.com/exilesprx/zig-install/internal/config.BuildDate=DATE'"
 ```
 
-The justfile in this project automatically reads from the `.env` file and sets the defaults during build.
+The justfile in this project automatically sets the ldflags during build and is the recommended way to build.
 
 ## Examples
 
