@@ -58,7 +58,7 @@ func TestTaskFormatter_PrintTask(t *testing.T) {
 	formatter := NewTaskFormatter(cfg, styles)
 
 	// Test printing a task
-	formatter.PrintTask("Task Name", "Success", "Additional output")
+	formatter.PrintSuccess("Task Name", "Additional output")
 
 	// Restore stdout and read captured output
 	_ = w.Close()
@@ -91,7 +91,7 @@ func TestTaskFormatter_PrintTaskWithVerbose(t *testing.T) {
 	formatter := NewTaskFormatter(cfg, styles)
 
 	// Test printing a task with additional output
-	formatter.PrintTask("Task Name", "Success", "Additional verbose output")
+	formatter.PrintSuccess("Task Name", "Additional verbose output")
 
 	// Restore stdout and read captured output
 	_ = w.Close()
@@ -131,7 +131,7 @@ func TestTaskFormatter_NilConfigAndStyles(t *testing.T) {
 
 	// Test printing with nil dependencies (should use fallback behavior)
 	formatter.PrintSection("Test Section")
-	formatter.PrintTask("Task Name", "Success", "Additional output")
+	formatter.PrintSuccess("Task Name", "Additional output")
 
 	// Restore stdout and read captured output
 	_ = w.Close()

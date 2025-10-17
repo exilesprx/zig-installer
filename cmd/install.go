@@ -96,7 +96,7 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 
 	// System check section
 	formatter.PrintSection("System Check")
-	formatter.PrintTask("Dependencies verified, ready to install", "Success", "")
+	formatter.PrintSuccess("Dependencies verified, ready to install", "")
 
 	// Store Zig version to match with ZLS
 	if !config.ZLSOnly {
@@ -111,7 +111,7 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 			return
 		}
 		logger.LogInfo("Zig installation completed successfully")
-		formatter.PrintTask("Zig compiler installed and configured", "Success", "")
+		formatter.PrintSuccess("Zig compiler installed and configured", "")
 	} else {
 		// If only installing ZLS, get the current Zig version
 		zigCmd := exec.Command("zig", "version")
@@ -134,7 +134,7 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 			return
 		}
 		logger.LogInfo("ZLS installation completed successfully")
-		formatter.PrintTask("ZLS language server installed and configured", "Success", "")
+		formatter.PrintSuccess("ZLS language server installed and configured", "")
 	}
 
 	logger.LogInfo("Installation process completed successfully")

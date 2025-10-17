@@ -16,6 +16,9 @@ import (
 // OutputFormatter handles formatted output for installation tasks
 type OutputFormatter interface {
 	PrintSection(sectionName string)
+	PrintProgress(name, output string)
+	PrintSuccess(name, output string)
+	PrintError(name, output string)
 	PrintTask(name, status, output string)
 }
 
@@ -91,6 +94,18 @@ func (tf *TaskFormatter) PrintTask(name, status, output string) {
 			fmt.Printf("    %s\n", tf.styles.Grey.Render(output))
 		}
 	}
+}
+
+func (tf *TaskFormatter) PrintProgress(name, output string) {
+	tf.PrintTask(name, "", output)
+}
+
+func (tf *TaskFormatter) PrintSuccess(name, output string) {
+	tf.PrintTask(name, "Success", output)
+}
+
+func (tf *TaskFormatter) PrintError(name, output string) {
+	tf.PrintTask(name, "Failed", output)
 }
 
 // getZigVersion fetches version information from ziglang.org
