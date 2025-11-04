@@ -97,15 +97,15 @@ func (tf *TaskFormatter) PrintTask(name, status, output string) {
 }
 
 func (tf *TaskFormatter) PrintProgress(name, output string) {
-	tf.PrintTask(name, "", output)
+	tf.PrintTask(name, "Processing...", output)
 }
 
 func (tf *TaskFormatter) PrintSuccess(name, output string) {
-	tf.PrintTask(name, "Success", output)
+	tf.PrintTask(name, "Success:", output)
 }
 
 func (tf *TaskFormatter) PrintError(name, output string) {
-	tf.PrintTask(name, "Failed", output)
+	tf.PrintTask(name, "Failed:", output)
 }
 
 // getZigVersion fetches version information from ziglang.org
