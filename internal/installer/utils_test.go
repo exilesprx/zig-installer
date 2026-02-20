@@ -71,7 +71,7 @@ func TestTaskFormatter_PrintTask(t *testing.T) {
 	}
 	output := buf.String()
 
-	expected := "  --> Success Task Name\n"
+	expected := "  --> Success: Task Name\n"
 	if output != expected {
 		t.Errorf("Expected %q, got %q", expected, output)
 	}
@@ -109,7 +109,7 @@ func TestTaskFormatter_PrintTaskWithVerbose(t *testing.T) {
 		t.Fatalf("Expected 2 lines of output, got %d: %v", len(lines), lines)
 	}
 
-	expectedFirstLine := "  --> Success Task Name"
+	expectedFirstLine := "  --> Success: Task Name"
 	if lines[0] != expectedFirstLine {
 		t.Errorf("Expected first line %q, got %q", expectedFirstLine, lines[0])
 	}
@@ -151,7 +151,7 @@ func TestTaskFormatter_NilConfigAndStyles(t *testing.T) {
 
 	expectedLines := []string{
 		"==> Test Section",
-		"  Success Task Name",
+		"  Success: Task Name",
 		"    Additional output",
 	}
 

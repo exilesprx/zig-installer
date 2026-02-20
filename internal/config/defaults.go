@@ -1,7 +1,11 @@
 package config
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // Common defaults that are the same across all platforms
@@ -29,23 +33,67 @@ type DefaultConfig struct {
 	EnableLog   bool
 }
 
-// getPlatformPaths returns the platform-specific paths
-func getPlatformPaths() (zigDir, zlsDir, binDir string) {
+// getUserLocalPaths returns user-local installation paths
+func getUserLocalPaths() (zigDir, zlsDir, binDir string, err error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", "", "", fmt.Errorf("could not determine home directory: %w", err)
+	}
+
+	return filepath.Join(home, ".local", "share", "zig"),
+		filepath.Join(home, ".local", "share", "zls"),
+		filepath.Join(home, ".local", "bin"),
+		nil
+}
+
+// GetSystemZigDirs returns potential system installation directories for detection
+func GetSystemZigDirs() []string {
 	switch runtime.GOOS {
 	case "darwin":
-		return "/usr/local/zig",
-			"/usr/local/zls",
-			"/usr/local/bin"
-	default: // linux and others
-		return "/opt/zig",
-			"/opt/zls",
-			"/usr/local/bin"
+		return []string{"/usr/local/zig", "/opt/zig"}
+	default: // linux
+		return []string{"/opt/zig", "/usr/local/zig"}
 	}
 }
 
-// GetDefaults returns platform-specific default configuration values
+// DetectSystemInstallation checks if Zig is installed system-wide
+func DetectSystemInstallation() (string, bool) {
+	// Check for system directories with content
+	for _, dir := range GetSystemZigDirs() {
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			// Check if it actually contains Zig installations
+			entries, err := os.ReadDir(dir)
+			if err == nil && len(entries) > 0 {
+				return dir, true
+			}
+		}
+	}
+
+	// Check for system symlinks (even if broken)
+	systemBinLinks := []string{"/usr/local/bin/zig", "/usr/local/bin/zls"}
+	for _, link := range systemBinLinks {
+		if _, err := os.Lstat(link); err == nil {
+			// Symlink exists - check if it points to a system path
+			target, err := os.Readlink(link)
+			if err == nil {
+				// If symlink points to /opt or /usr/local, consider it a system installation
+				if strings.HasPrefix(target, "/opt/") || strings.HasPrefix(target, "/usr/local/") {
+					return filepath.Dir(target), true
+				}
+			}
+		}
+	}
+
+	return "", false
+}
+
+// GetDefaults returns user-local default configuration values
 func GetDefaults() *DefaultConfig {
-	zigDir, zlsDir, binDir := getPlatformPaths()
+	zigDir, zlsDir, binDir, err := getUserLocalPaths()
+	if err != nil {
+		// Fatal error - can't proceed without home directory
+		panic(fmt.Sprintf("Cannot determine user home directory: %v", err))
+	}
 
 	return &DefaultConfig{
 		ZigDir:      zigDir,

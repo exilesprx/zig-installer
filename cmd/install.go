@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/exilesprx/zig-install/internal/config"
@@ -63,11 +65,18 @@ You can specify a version to install using --version, otherwise the latest maste
 
 			log.LogInfo("Starting installation process")
 
-			// First check for root privileges
-			if err := checkIsRoot(); err != nil {
+			// Check that we're NOT running as root
+			if err := checkNotRoot(); err != nil {
 				log.LogError("Root check failed: %v", err)
 				fmt.Println(tui.PrintWithStyles(fmt.Sprintf("Error: %v", err), styles.Error, cfg.NoColor))
 				os.Exit(1)
+			}
+
+			// Show macOS warning
+			if runtime.GOOS == "darwin" {
+				formatter := installer.NewTaskFormatter(cfg, styles)
+				formatter.PrintWarning("macOS Support", "macOS support is experimental and may have issues")
+				fmt.Println() // Blank line
 			}
 
 			// Then check for dependencies
@@ -75,6 +84,42 @@ You can specify a version to install using --version, otherwise the latest maste
 				log.LogError("Dependency check failed: %v", err)
 				fmt.Println(tui.PrintWithStyles(fmt.Sprintf("Error: %v", err), styles.Error, cfg.NoColor))
 				os.Exit(1)
+			}
+
+			// Create formatter for migration check
+			formatter := installer.NewTaskFormatter(cfg, styles)
+
+			// Check for existing system installation and prompt for migration
+			migrationChoice, systemDir, err := installer.DetectAndPromptMigration(formatter, log)
+			if err != nil {
+				log.LogError("Migration prompt failed: %v", err)
+				fmt.Println(tui.PrintWithStyles(fmt.Sprintf("Error: %v", err), styles.Error, cfg.NoColor))
+				os.Exit(1)
+			}
+
+			switch migrationChoice {
+			case installer.MigrationChoiceMigrate:
+				formatter.PrintSection("Migration")
+				if err := installer.PerformMigration(systemDir, formatter, log); err != nil {
+					fmt.Println()
+					formatter.PrintError("Migration Failed", fmt.Sprintf("%v", err))
+					formatter.PrintTask("Next Steps", "Manual removal required",
+						"Follow the instructions above, then run install again")
+					os.Exit(1)
+				}
+				formatter.PrintSuccess("Migration Complete", "System installation removed successfully")
+				fmt.Println() // Blank line for readability
+
+			case installer.MigrationChoiceKeepBoth:
+				installer.WarnAboutPathConflict(systemDir, cfg.BinDir, formatter)
+				fmt.Println() // Blank line
+
+			case installer.MigrationChoiceCancel:
+				formatter.PrintTask("Installation", "Cancelled", "User cancelled installation")
+				os.Exit(0)
+
+			default:
+				// No system installation detected, proceed normally
 			}
 
 			// Run the TUI installer
@@ -112,6 +157,21 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 		}
 		logger.LogInfo("Zig installation completed successfully")
 		formatter.PrintSuccess("Zig compiler installed and configured", "")
+
+		// Check PATH configuration
+		fmt.Println() // Blank line for readability
+		checkPathConfiguration(config.BinDir, formatter)
+		fmt.Println() // Blank line
+
+		// Auto-cleanup prompt (enabled by default, can be disabled with --no-cleanup)
+		if !config.NoCleanup {
+			logger.LogInfo("Checking for auto-cleanup opportunity")
+			if err := installer.AutoCleanupPrompt(config, logger, formatter, zigVersion); err != nil {
+				// Don't fail the installation, just log the error
+				logger.LogError("Auto-cleanup failed: %v", err)
+				formatter.PrintError("Auto-cleanup", fmt.Sprintf("Cleanup failed: %v", err))
+			}
+		}
 	} else {
 		// If only installing ZLS, get the current Zig version
 		zigCmd := exec.Command("zig", "version")
@@ -143,12 +203,79 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 	fmt.Println(styles.Separator.Render(strings.Repeat("─", 40)))
 }
 
-// checkIsRoot verifies the script is running as root
-func checkIsRoot() error {
-	if os.Geteuid() != 0 {
-		return fmt.Errorf("this program must be run as root. Please use 'sudo' or log in as root")
+// checkNotRoot ensures the installer is NOT run as root
+func checkNotRoot() error {
+	if os.Geteuid() == 0 {
+		return fmt.Errorf(`❌ ERROR: This installer should NOT be run with sudo.
+
+zig-installer v4.0.0 uses user-local installation only.
+
+Installation directory: ~/.local/share/zig
+Binary symlinks: ~/.local/bin/zig and ~/.local/bin/zls
+
+If you have an existing system-wide installation (/opt/zig or /usr/local/zig):
+  1. Run without sudo: ./zig-installer migrate
+  2. Then install: ./zig-installer install
+
+To manually remove system installation:
+  sudo rm -rf /opt/zig /opt/zls /usr/local/zig /usr/local/zls
+  sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
+
+Then run: ./zig-installer install (without sudo)`)
 	}
 	return nil
+}
+
+// checkPathConfiguration warns if binDir is not in PATH
+func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) {
+	pathEnv := os.Getenv("PATH")
+	if pathEnv == "" {
+		return
+	}
+
+	pathDirs := strings.Split(pathEnv, string(os.PathListSeparator))
+
+	// Check if binDir is in PATH
+	for _, dir := range pathDirs {
+		// Direct match
+		if dir == binDir {
+			return
+		}
+		// Also check with resolved symlinks
+		if absDir, err := filepath.EvalSymlinks(dir); err == nil {
+			if absBin, err := filepath.EvalSymlinks(binDir); err == nil {
+				if absDir == absBin {
+					return
+				}
+			}
+		}
+	}
+
+	// Not in PATH - show warning with shell-specific instructions
+	formatter.PrintWarning("PATH Configuration Required",
+		fmt.Sprintf("%s is not in your PATH", binDir))
+
+	shell := os.Getenv("SHELL")
+	var configFile, exportCmd string
+
+	if strings.Contains(shell, "fish") {
+		configFile = "~/.config/fish/config.fish"
+		exportCmd = fmt.Sprintf("set -gx PATH %s $PATH", binDir)
+	} else if strings.Contains(shell, "zsh") {
+		configFile = "~/.zshrc"
+		exportCmd = fmt.Sprintf("export PATH=\"%s:$PATH\"", binDir)
+	} else {
+		// Default to bash
+		configFile = "~/.bashrc"
+		exportCmd = fmt.Sprintf("export PATH=\"%s:$PATH\"", binDir)
+	}
+
+	formatter.PrintTask("Step 1", "Add to PATH",
+		fmt.Sprintf("Add this line to your %s:\n      %s", configFile, exportCmd))
+	formatter.PrintTask("Step 2", "Reload configuration",
+		fmt.Sprintf("Run: source %s", configFile))
+	formatter.PrintTask("Alternative", "Start new terminal",
+		"Or simply open a new terminal session")
 }
 
 // checkDependencies verifies all required tools are installed

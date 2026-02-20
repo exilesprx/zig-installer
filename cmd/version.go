@@ -18,7 +18,7 @@ type BuildInfo struct {
 
 // Default build information
 var (
-	Version   = "0.1.0"
+	Version   = "4.0.0"
 	Commit    = "unknown"
 	BuildDate = "unknown"
 )
