@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/installer"
-	"github.com/exilesprx/zig-install/internal/logger"
-	"github.com/exilesprx/zig-install/internal/tui"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/installer"
+	"github.com/exilesprx/zig-installer/internal/logger"
+	"github.com/exilesprx/zig-installer/internal/tui"
 	"github.com/spf13/cobra"
 )
 

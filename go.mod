@@ -1,4 +1,4 @@
-module github.com/exilesprx/zig-install
+module github.com/exilesprx/zig-installer
 
 go 1.25.2
 

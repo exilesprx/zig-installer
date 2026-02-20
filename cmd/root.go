@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/logger"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

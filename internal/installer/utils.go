@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/tui"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/tui"
 )
 
 // OutputFormatter handles formatted output for installation tasks

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/logger"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/logger"
 )
 
 // InstallZLS handles the ZLS installation process

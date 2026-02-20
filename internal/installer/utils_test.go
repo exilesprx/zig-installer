@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/tui"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/tui"
 )
 
 func TestTaskFormatter_PrintSection(t *testing.T) {

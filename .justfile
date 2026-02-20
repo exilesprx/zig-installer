@@ -5,7 +5,7 @@ set dotenv-load
 default: help
 
 # Common build variables - using Just's variable support
-module := "github.com/exilesprx/zig-install"
+module := "github.com/exilesprx/zig-installer"
 package := module + "/cmd"
 config_package := module + "/internal/config"
 # Note: v4.0.0+ uses ~/.local/share/zig and ~/.local/share/zls

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/exilesprx/zig-install/cmd"
+	"github.com/exilesprx/zig-installer/cmd"
 )
 
 func main() {

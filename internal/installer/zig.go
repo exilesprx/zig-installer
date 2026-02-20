@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/exilesprx/zig-install/internal/config"
-	"github.com/exilesprx/zig-install/internal/logger"
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/logger"
 )
 
 // ZigBuildInfo represents information about a specific Zig build
