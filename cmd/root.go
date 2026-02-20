@@ -20,6 +20,9 @@ type CommandOptions struct {
 	ShowSettings bool
 	LogFile      string
 	EnableLog    bool
+	AutoCleanup  bool
+	NoCleanup    bool
+	KeepLast     int
 }
 
 // RootCommand encapsulates the root command and its dependencies
@@ -34,10 +37,24 @@ func NewRootCommand() *RootCommand {
 	options := &CommandOptions{}
 
 	rootCmd := &cobra.Command{
-		Use:   "zig-install",
+		Use:   "zig-installer",
 		Short: "Install Zig and ZLS (Zig Language Server)",
-		Long: `A tool to install Zig and ZLS (Zig Language Server).
-This program must be run as root or with sudo.`,
+		Long: `Installs Zig and the Zig Language Server (ZLS) to your user-local directory.
+
+⚠️  BREAKING CHANGE (v4.0.0): This installer now uses user-local installation ONLY.
+   System-wide installation is no longer supported.
+
+Installation directories:
+  • Zig versions: ~/.local/share/zig/
+  • ZLS repository: ~/.local/share/zls/
+  • Binary symlinks: ~/.local/bin/zig and ~/.local/bin/zls
+
+❌ Do NOT run with sudo. This installer uses user-local installation only.
+
+Migration: If you have an existing system installation, run:
+  zig-installer migrate
+
+macOS: Support is experimental and may have issues.`,
 	}
 
 	// Main flags - moved to PersistentFlags so they're available to subcommands
@@ -53,6 +70,11 @@ This program must be run as root or with sudo.`,
 	// Logging flags
 	rootCmd.PersistentFlags().StringVar(&options.LogFile, "log-file", "zig-install.log", "File to log errors to")
 	rootCmd.PersistentFlags().BoolVar(&options.EnableLog, "enable-log", true, "Enable logging to file")
+
+	// Cleanup flags
+	rootCmd.PersistentFlags().BoolVar(&options.AutoCleanup, "auto-cleanup", false, "Automatically cleanup old versions after install without prompting")
+	rootCmd.PersistentFlags().BoolVar(&options.NoCleanup, "no-cleanup", false, "Disable auto-cleanup prompt after install")
+	rootCmd.PersistentFlags().IntVar(&options.KeepLast, "keep-last", 0, "Keep last N versions when cleaning up")
 
 	return &RootCommand{
 		cmd:       rootCmd,
@@ -79,6 +101,12 @@ func Execute() {
 func (rc *RootCommand) AddCommands() {
 	// Add install command and pass this root command instance
 	rc.cmd.AddCommand(NewInstallCommand(rc.options, rc).cmd)
+
+	// Add cleanup command
+	rc.cmd.AddCommand(NewCleanupCommand(rc.options, rc).cmd)
+
+	// Add migrate command
+	rc.cmd.AddCommand(NewMigrateCommand(rc.options, rc).Command())
 
 	// Add version command
 	rc.cmd.AddCommand(NewVersionCommand().cmd)
@@ -107,6 +135,9 @@ func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, er
 	cfg.ShowSettings = rc.options.ShowSettings
 	cfg.LogFile = rc.options.LogFile
 	cfg.EnableLog = rc.options.EnableLog
+	cfg.AutoCleanup = rc.options.AutoCleanup
+	cfg.NoCleanup = rc.options.NoCleanup
+	cfg.KeepLast = rc.options.KeepLast
 
 	// Initialize logger
 	log, err := logger.NewFileLogger(cfg.LogFile, cfg.EnableLog)

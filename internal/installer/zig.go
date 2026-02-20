@@ -89,24 +89,6 @@ func InstallZig(p interface{}, config *config.Config, logger logger.ILogger, for
 		return "", fmt.Errorf("could not create directory %s: %w", config.ZigDir, err)
 	}
 
-	// Get the username to set ownership
-	user := os.Getenv("SUDO_USER")
-	if user == "" {
-		user = os.Getenv("USER")
-	}
-
-	// Set ownership
-	if user != "" {
-		formatter.PrintProgress("Directory setup", fmt.Sprintf("Setting ownership of %s to %s", config.ZigDir, user))
-		cmd := exec.Command("chown", "-R", user+":"+user, config.ZigDir)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			formatter.PrintError("Directory setup", fmt.Sprintf("Error setting ownership: %s", output))
-			return "", fmt.Errorf("could not set ownership of %s: %w", config.ZigDir, err)
-		} else {
-			formatter.PrintSuccess("Directory setup", string(output))
-		}
-	}
-
 	// Download Zig
 	tarURL := buildInfo.Tarball
 	tarFile := filepath.Base(tarURL)

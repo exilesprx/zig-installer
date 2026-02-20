@@ -41,6 +41,7 @@ type Styles struct {
 	Subtitle  lipgloss.Style
 	Success   lipgloss.Style
 	Error     lipgloss.Style
+	Warning   lipgloss.Style
 	Info      lipgloss.Style
 	Header    lipgloss.Style
 	Status    lipgloss.Style
@@ -101,6 +102,8 @@ func NewStyles(colors *Colors) *Styles {
 			Foreground(colors.Green),
 		Error: lipgloss.NewStyle().
 			Foreground(colors.Red),
+		Warning: lipgloss.NewStyle().
+			Foreground(colors.Yellow),
 		Info: lipgloss.NewStyle().
 			Foreground(colors.Blue),
 		Header: lipgloss.NewStyle().

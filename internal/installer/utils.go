@@ -20,6 +20,7 @@ type OutputFormatter interface {
 	PrintSuccess(name, output string)
 	PrintError(name, output string)
 	PrintTask(name, status, output string)
+	PrintWarning(name, output string)
 }
 
 // TaskFormatter implements OutputFormatter with styling support
@@ -77,6 +78,8 @@ func (tf *TaskFormatter) PrintTask(name, status, output string) {
 			statusColor = tf.styles.Success // Green for success
 		} else if strings.Contains(status, "Failed") || strings.Contains(status, "Error") {
 			statusColor = tf.styles.Error // Red for errors
+		} else if strings.Contains(status, "Warning") {
+			statusColor = tf.styles.Warning // Yellow for warnings
 		} else {
 			statusColor = tf.styles.Grey // Grey for other statuses
 		}
@@ -106,6 +109,10 @@ func (tf *TaskFormatter) PrintSuccess(name, output string) {
 
 func (tf *TaskFormatter) PrintError(name, output string) {
 	tf.PrintTask(name, "Failed:", output)
+}
+
+func (tf *TaskFormatter) PrintWarning(name, output string) {
+	tf.PrintTask(name, "Warning:", output)
 }
 
 // getZigVersion fetches version information from ziglang.org

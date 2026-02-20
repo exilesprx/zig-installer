@@ -27,6 +27,11 @@ type Config struct {
 	Verbose      bool
 	LogFile      string
 	EnableLog    bool
+
+	// Cleanup options
+	AutoCleanup bool // Automatically cleanup without prompting
+	NoCleanup   bool // Disable auto-cleanup prompt (opt-out)
+	KeepLast    int  // Keep last N versions
 }
 
 // NewConfig creates a new configuration with default values

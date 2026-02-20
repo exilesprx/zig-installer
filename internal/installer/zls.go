@@ -18,24 +18,6 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, for
 		return fmt.Errorf("could not create directory %s: %w", config.ZLSDir, err)
 	}
 
-	// Get the username to set ownership
-	user := os.Getenv("SUDO_USER")
-	if user == "" {
-		user = os.Getenv("USER")
-	}
-
-	// Set initial directory ownership
-	if user != "" {
-		formatter.PrintProgress("Directory setup", fmt.Sprintf("Setting ownership of %s to %s", config.ZLSDir, user))
-		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			formatter.PrintError("Directory setup", fmt.Sprintf("Error setting ownership: %s", output))
-			return fmt.Errorf("could not set ownership of %s: %w", config.ZLSDir, err)
-		} else {
-			formatter.PrintSuccess("Directory setup", "Directory ownership configured")
-		}
-	}
-
 	// First determine if we're installing a specific version
 	version := convertToSemanticVersion(zigVersion)
 	logger.LogInfo("Zig version detected: %s, converted to ZLS version: %s", zigVersion, version)
@@ -125,18 +107,6 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, for
 		formatter.PrintSuccess("ZLS latest", "Updated to latest version")
 	}
 
-	// Set ownership after git operations
-	if user != "" {
-		formatter.PrintProgress("Ownership update", fmt.Sprintf("Setting ownership after git operations for %s", config.ZLSDir))
-		cmd := exec.Command("chown", "-R", user+":"+user, config.ZLSDir)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			formatter.PrintError("Ownership update", fmt.Sprintf("Error: %s", output))
-			return fmt.Errorf("could not set ownership after git operations: %w", err)
-		} else {
-			formatter.PrintSuccess("Ownership update", "Repository ownership updated")
-		}
-	}
-
 	// Build ZLS
 	formatter.PrintProgress("ZLS build", "Building ZLS...")
 
@@ -166,19 +136,6 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, for
 
 	formatter.PrintSuccess("ZLS build", "ZLS built successfully")
 
-	// Set ownership of the build output
-	buildOutDir := filepath.Join(config.ZLSDir, "zig-out")
-	if user != "" && isDirectory(buildOutDir) {
-		formatter.PrintProgress("Build ownership", fmt.Sprintf("Setting ownership of build output in %s", buildOutDir))
-		cmd := exec.Command("chown", "-R", user+":"+user, buildOutDir)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			formatter.PrintError("Build ownership", fmt.Sprintf("Error setting ownership: %s", output))
-			return fmt.Errorf("could not set ownership of build output: %w", err)
-		} else {
-			formatter.PrintSuccess("Build ownership", "Build output ownership configured")
-		}
-	}
-
 	// Create symbolic link to ZLS binary
 	zlsBinPath := filepath.Join(config.ZLSDir, "zig-out", "bin", "zls")
 	linkPath := filepath.Join(config.BinDir, "zls")
@@ -200,15 +157,6 @@ func InstallZLS(p interface{}, config *config.Config, logger logger.ILogger, for
 	formatter.PrintSuccess("ZLS symbolic link setup", fmt.Sprintf("Created symlink: %s -> %s", linkPath, zlsBinPath))
 
 	return nil
-}
-
-// isDirectory checks if the given path is a directory
-func isDirectory(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return info.IsDir()
 }
 
 // convertToSemanticVersion converts Zig version format to ZLS tag format
