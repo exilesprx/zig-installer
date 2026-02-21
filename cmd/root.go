@@ -108,6 +108,9 @@ func (rc *RootCommand) AddCommands() {
 	// Add migrate command
 	rc.cmd.AddCommand(NewMigrateCommand(rc.options, rc).Command())
 
+	// Add switch command
+	rc.cmd.AddCommand(NewSwitchCommand(rc.options, rc).GetCommand())
+
 	// Add version command
 	rc.cmd.AddCommand(NewVersionCommand().cmd)
 

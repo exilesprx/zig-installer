@@ -59,6 +59,7 @@ just install
 ### Commands
 
 - `install`: Install Zig and/or ZLS (default if no command specified)
+- `switch`: Switch between installed Zig versions
 - `migrate`: Migrate from a system-wide installation to user-local installation
 - `cleanup`: Interactively clean up old Zig versions
 - `version`: Show version information about the installer
@@ -205,6 +206,64 @@ which zig
 # Should output: /home/yourusername/.local/bin/zig
 
 zig version
+```
+
+## Switching Between Versions
+
+If you have multiple Zig versions installed, you can quickly switch between them using the `switch` command. This updates the symlink in `~/.local/bin/zig` to point to a different installed version.
+
+### Interactive Selection
+
+Run the switch command without arguments to see a list of installed versions:
+
+```bash
+zig-installer switch
+```
+
+This will display an interactive menu where you can select the version you want to use. The currently active version is marked with an arrow (→).
+
+### Direct Version Switch
+
+You can also switch to a specific version directly:
+
+```bash
+# Using positional argument
+zig-installer switch 0.13.0
+
+# Using flag
+zig-installer switch --version 0.13.0
+```
+
+### Requirements
+
+- Multiple Zig versions must be installed (use `zig-installer install <version>` to install more)
+- Only works with user-local installations in `~/.local`
+
+### Notes
+
+- The `switch` command only affects the Zig binary, not ZLS
+- ZLS versions are typically tied to specific Zig versions
+- If you need a different ZLS version, reinstall it with: `zig-installer install --zls-only`
+- After switching, verify with `zig version` to confirm the change
+
+### Example Workflow
+
+```bash
+# Install multiple versions
+zig-installer install 0.13.0
+zig-installer install 0.12.0
+
+# Switch between them
+zig-installer switch 0.12.0
+zig version  # Shows 0.12.0
+
+zig-installer switch 0.13.0
+zig version  # Shows 0.13.0
+
+# Or use interactive selection
+zig-installer switch
+# → 0.13.0 (current)
+#   0.12.0
 ```
 
 ## Configuration
