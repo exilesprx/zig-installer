@@ -5,6 +5,7 @@
 This program installs Zig and the Zig Language Server (ZLS) to your local user directory. You can choose to install both or just one of them.
 
 **Platform Support:**
+
 - **Linux:** Fully supported
 - **macOS:** Experimental support (ARM64 and x86_64)
 
@@ -66,24 +67,29 @@ just install
 ### Options
 
 #### Installation Options
+
 - `--zig-only`: Install only Zig
 - `--zls-only`: Install only ZLS (Zig Language Server)
 - `--version, -v <version>`: Specify Zig version to install (default: latest master)
 
 #### Cleanup Options
+
 - `--auto-cleanup`: Automatically cleanup old versions after install without prompting
 - `--no-cleanup`: Disable auto-cleanup prompt after install
 - `--keep-last <N>`: Keep last N versions when cleaning up
 
 #### Output Control
+
 - `--verbose`: Show detailed output during installation
 - `--no-color`: Disable colored output
 
 #### Configuration
+
 - `--env <file>`: Specify a custom environment file (default: `.env`)
 - `--settings`: Show current configuration settings
 
 #### Logging
+
 - `--log-file <file>`: Specify log file (default: `zig-install.log`)
 - `--enable-log`: Enable/disable logging to file (enabled by default)
 
@@ -100,6 +106,7 @@ Run the migrate command to automatically remove your system installation:
 ```
 
 This will:
+
 1. Detect system installations of Zig and ZLS
 2. Remove them from `/opt/zig`, `/usr/local/zig`, `/opt/zls`, `/usr/local/zls`
 3. Remove symlinks from `/usr/local/bin/zig` and `/usr/local/bin/zls`
@@ -138,12 +145,14 @@ You'll see:
 If you prefer to manually remove the system installation:
 
 **Linux:**
+
 ```bash
 sudo rm -rf /opt/zig /opt/zls
 sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
 ```
 
 **macOS:**
+
 ```bash
 sudo rm -rf /usr/local/zig /usr/local/zls /opt/zig /opt/zls
 sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
@@ -372,6 +381,7 @@ Run the cleanup command to interactively select versions to remove:
 ```
 
 This will:
+
 1. Scan for all installed Zig versions in `~/.local/share/zig/`
 2. Display a table showing version, size, install date, and current status
 3. Allow you to select which versions to remove (the current version cannot be removed)
@@ -383,18 +393,21 @@ This will:
 #### Cleanup Command Options
 
 **Interactive Mode (Default)**
+
 ```bash
 # Select versions manually from an interactive list
 ./zig-installer cleanup
 ```
 
 **Dry Run Mode**
+
 ```bash
 # See what would be removed without actually removing anything
 ./zig-installer cleanup --dry-run
 ```
 
 **Auto-Cleanup with Keep-Last**
+
 ```bash
 # Keep the last 3 versions, automatically remove older ones
 ./zig-installer cleanup --keep-last 3
@@ -419,12 +432,14 @@ This will:
 #### Controlling Auto-Cleanup Behavior
 
 **Disable Auto-Cleanup Prompt**
+
 ```bash
 # Install without cleanup prompt (opt-out)
 ./zig-installer install --version 0.13.0 --no-cleanup
 ```
 
 **Auto-Cleanup Without Prompting**
+
 ```bash
 # Install and automatically show cleanup selection UI
 ./zig-installer install --version 0.13.0 --auto-cleanup
@@ -436,6 +451,7 @@ This will:
 ### Cleanup Examples
 
 **Example 1: Interactive Cleanup**
+
 ```bash
 $ ./zig-installer cleanup
 
@@ -467,6 +483,7 @@ Total disk usage: 435 MB
 ```
 
 **Example 2: Auto-Cleanup After Install**
+
 ```bash
 $ ./zig-installer install --version 0.13.0
 
@@ -487,6 +504,7 @@ $ ./zig-installer install --version 0.13.0
 ```
 
 **Example 3: Keep Last N Versions**
+
 ```bash
 $ ./zig-installer cleanup --keep-last 2 --yes
 
@@ -553,12 +571,14 @@ The installer will warn you about PATH conflicts if you choose to keep both.
 ### How do I uninstall completely?
 
 **Remove user-local installation:**
+
 ```bash
 rm -rf ~/.local/share/zig ~/.local/share/zls
 rm -f ~/.local/bin/zig ~/.local/bin/zls
 ```
 
 **Remove system installation (if you have one):**
+
 ```bash
 sudo rm -rf /opt/zig /opt/zls /usr/local/zig /usr/local/zls
 sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
@@ -580,11 +600,13 @@ Both ARM64 (Apple Silicon) and x86_64 (Intel) are supported.
 After installation, the installer automatically checks your PATH. If `~/.local/bin` is not found, it will show shell-specific instructions:
 
 **For Bash/Zsh:**
+
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
 **For Fish:**
+
 ```fish
 set -gx PATH $HOME/.local/bin $PATH
 ```
@@ -635,17 +657,20 @@ If `which zig` shows `/usr/local/bin/zig`, you're still using a system installat
 ### v4.0.0 - Breaking Changes
 
 **Major Changes:**
+
 - **BREAKING:** Removed system-wide installation support - user-local only (`~/.local/`)
 - **BREAKING:** Installer now rejects sudo - no root privileges required or allowed
 - **BREAKING:** Binary renamed from `zig-install-{platform}` to `zig-installer`
 
 **New Features:**
+
 - Added `migrate` command to migrate from system installations
 - Automatic detection of existing system installations with migration prompt
 - PATH configuration detection with shell-specific instructions
 - Warning when system installation exists alongside user-local installation
 
 **Installation Directories Changed:**
+
 - Old: `/opt/zig` (Linux), `/usr/local/zig` (macOS)
 - New: `~/.local/share/zig` (all platforms)
 - Old: `/opt/zls` (Linux), `/usr/local/zls` (macOS)
@@ -654,6 +679,7 @@ If `which zig` shows `/usr/local/bin/zig`, you're still using a system installat
 - New: `~/.local/bin/zig` (symlink)
 
 **Cleanup Command Changes:**
+
 - Cleanup now only manages `~/.local/share/zig/` versions
 - Cleanup warns if system installation detected
 - No longer requires sudo
@@ -668,22 +694,26 @@ Run `zig-installer migrate` to remove system installations, or use the automatic
 If `zig-installer migrate` fails with permission errors, you may need to manually remove the system installation:
 
 **Linux:**
+
 ```bash
 sudo rm -rf /opt/zig /opt/zls /usr/local/bin/zig /usr/local/bin/zls
 ```
 
 **macOS:**
+
 ```bash
 sudo rm -rf /usr/local/zig /usr/local/zls /opt/zig /opt/zls /usr/local/bin/zig /usr/local/bin/zls
 ```
 
 After manual cleanup, you can verify with:
+
 ```bash
 ls -la /usr/local/bin/zig  # Should show "No such file or directory"
 ls -la /opt/zig            # Should show "No such file or directory"
 ```
 
 Then install the user-local version:
+
 ```bash
 ./zig-installer install
 ```
