@@ -52,6 +52,11 @@ type Styles struct {
 	TopLevel  lipgloss.Style // Yellow "==>" prefix for top-level messages
 	SubLevel  lipgloss.Style // Blue "  -->" prefix for sub-level messages
 	Grey      lipgloss.Style // Grey for other text
+
+	// Flag-specific styles for help output
+	FlagName    lipgloss.Style // Teal - for flag names (-v, --version)
+	FlagType    lipgloss.Style // Peach - for type annotations (string, int)
+	FlagDefault lipgloss.Style // Subtext0 - for default values
 }
 
 // NewMochaColors creates a new theme colors instance with Catppuccin Mocha palette
@@ -125,6 +130,14 @@ func NewStyles(colors *Colors) *Styles {
 			Foreground(colors.Blue),
 		Grey: lipgloss.NewStyle().
 			Foreground(colors.Overlay1),
+
+		// Flag-specific styles for help output
+		FlagName: lipgloss.NewStyle().
+			Foreground(colors.Teal),
+		FlagType: lipgloss.NewStyle().
+			Foreground(colors.Peach),
+		FlagDefault: lipgloss.NewStyle().
+			Foreground(colors.Subtext0),
 	}
 }
 
