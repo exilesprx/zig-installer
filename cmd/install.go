@@ -100,14 +100,14 @@ You can specify a version to install using --version, otherwise the latest maste
 			switch migrationChoice {
 			case installer.MigrationChoiceMigrate:
 				formatter.PrintSection("Migration")
-				if err := installer.PerformMigration(systemDir, formatter, log); err != nil {
+				if err := installer.PerformMigration(systemDir, formatter, log, false); err != nil {
 					fmt.Println()
 					formatter.PrintError("Migration Failed", fmt.Sprintf("%v", err))
 					formatter.PrintTask("Next Steps", "Manual removal required",
 						"Follow the instructions above, then run install again")
 					os.Exit(1)
 				}
-				formatter.PrintSuccess("Migration Complete", "System installation removed successfully")
+				formatter.PrintSuccess("Migration Complete", "System installation migrated successfully")
 				fmt.Println() // Blank line for readability
 
 			case installer.MigrationChoiceKeepBoth:

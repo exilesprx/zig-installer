@@ -96,32 +96,72 @@ just install
 
 ## Migrating from System Installation
 
-If you previously used an older version of this installer that installed Zig to `/opt/zig` or `/usr/local/zig`, you have two options:
+If you previously used an older version of this installer that installed Zig to `/opt/zig` or `/usr/local/zig`, the migrate command will **preserve your installations** by moving them to `~/.local/share/`.
+
+### Migration Overview
+
+The migrate command:
+
+1. **Discovers** all Zig versions in system directories (e.g., `/opt/zig/zig-linux-x86_64-0.13.0`, `/opt/zig/zig-linux-x86_64-0.12.0`)
+2. **Moves** them to `~/.local/share/zig/` (preserving all versions - no redownload needed!)
+3. **Migrates ZLS** from `/opt/zls` or `/usr/local/zls` to `~/.local/share/zls/`
+4. **Recreates symlinks** in `~/.local/bin/` pointing to your previously active version
+5. **Cleans up** old symlinks from `/usr/local/bin/`
+6. **Ready immediately** - no reinstallation required
 
 ### Option 1: Use the Migrate Command (Recommended)
 
-Run the migrate command to automatically remove your system installation:
+**Dry run first (recommended):**
+
+```bash
+./zig-installer migrate --dry-run
+```
+
+This shows what would be migrated without making changes. Example output:
+
+```
+==> Discovering installations
+  --> Success: Found 3 Zig version(s)
+  --> Success: Found ZLS installation: /opt/zls
+  --> Active version: 0.13.0
+
+[Dry Run] Would migrate 3 Zig versions:
+  - 0.13.0 (127 MB) -> ~/.local/share/zig/
+  - 0.12.0 (115 MB) -> ~/.local/share/zig/
+  - 0.11.0 (98 MB) -> ~/.local/share/zig/
+
+[Dry Run] Would migrate ZLS -> ~/.local/share/zls/
+
+[Dry Run] Would recreate symlinks:
+  - ~/.local/bin/zig -> zig-linux-x86_64-0.13.0/zig
+  - ~/.local/bin/zls -> zls/zig-out/bin/zls
+
+[Dry Run] Would remove system symlinks:
+  - /usr/local/bin/zig
+  - /usr/local/bin/zls
+```
+
+**Run the actual migration:**
 
 ```bash
 ./zig-installer migrate
 ```
 
 This will:
+- Prompt for your sudo password (needed to move files from `/opt/`)
+- Move all discovered installations to `~/.local/share/`
+- Set up symlinks so everything works immediately
+- Your Zig and ZLS commands will continue working without interruption
 
-1. Detect system installations of Zig and ZLS
-2. Remove them from `/opt/zig`, `/usr/local/zig`, `/opt/zls`, `/usr/local/zls`
-3. Remove symlinks from `/usr/local/bin/zig` and `/usr/local/bin/zls`
-4. Prompt for your password if needed (via sudo)
-
-After migration, run:
-
-```bash
-./zig-installer install
-```
+**After migration:**
+- All your existing versions are preserved in `~/.local/share/zig/`
+- No need to reinstall or redownload anything
+- Run `zig version` to verify it works
+- Run `zig-installer switch` to switch between migrated versions
 
 ### Option 2: Automatic Migration During Install
 
-When you run `install`, the installer will detect any existing system installation and offer three choices:
+When you run `install`, the installer will detect any existing system installation and offer migration:
 
 ```bash
 ./zig-installer install
@@ -132,18 +172,75 @@ You'll see:
 ```
 ⚠ Found existing system-wide installation
 ? How would you like to proceed?
-  > Migrate to user-local (remove system installation) [Recommended]
+  > Migrate to user-local (move existing installations) [Recommended]
     Keep both (may cause PATH conflicts)
     Cancel installation
 ```
 
-- **Migrate:** Removes system installation and proceeds with user-local install
-- **Keep both:** Installs user-local version alongside system version (you'll get PATH priority warnings)
+- **Migrate:** Moves system installations to user-local (preserves your existing versions)
+- **Keep both:** Installs user-local version alongside system version (you'll get PATH warnings)
 - **Cancel:** Exits without making changes
+
+### Understanding What Gets Migrated
+
+**Zig versions:**
+- All `zig-*` directories in `/opt/zig/` or `/usr/local/zig/`
+- Example: `zig-linux-x86_64-0.13.0`, `zig-linux-x86_64-0.12.0`
+- Moved to: `~/.local/share/zig/`
+
+**ZLS installation:**
+- Directory `/opt/zls` or `/usr/local/zls`
+- Moved to: `~/.local/share/zls/`
+
+**Symlinks:**
+- Old: `/usr/local/bin/zig` and `/usr/local/bin/zls`
+- New: `~/.local/bin/zig` and `~/.local/bin/zls`
+- The new symlinks point to the same version you were using before
+
+**What if a version already exists?**
+If you've already installed a version to `~/.local/share/zig/`, the migration will skip it and keep your user-local version. This prevents conflicts and prefers your existing installations.
 
 ### Manual Migration
 
-If you prefer to manually remove the system installation:
+If you prefer to manually move the system installation (or if automatic migration fails):
+
+**Linux:**
+
+```bash
+# Create destination directories
+mkdir -p ~/.local/share/zig ~/.local/share/zls ~/.local/bin
+
+# Move Zig versions (preserves all installed versions)
+sudo mv /opt/zig/zig-* ~/.local/share/zig/
+
+# Move ZLS (if exists)
+sudo mv /opt/zls ~/.local/share/zls/
+
+# Fix ownership
+sudo chown -R $USER:$USER ~/.local/share/zig ~/.local/share/zls
+
+# Create symlinks (adjust version as needed)
+ln -s ~/.local/share/zig/zig-linux-x86_64-0.13.0/zig ~/.local/bin/zig
+ln -s ~/.local/share/zls/zig-out/bin/zls ~/.local/bin/zls
+
+# Clean up old system symlinks
+sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
+
+# Remove empty directories
+sudo rmdir /opt/zig /opt/zls 2>/dev/null || true
+```
+
+**Verify the migration:**
+
+```bash
+which zig  # Should show: /home/yourusername/.local/bin/zig
+zig version
+zls --version
+```
+
+### Alternative: Clean Install (Not Recommended)
+
+If you don't want to preserve your existing installations, you can remove them and reinstall:
 
 **Linux:**
 
@@ -159,11 +256,13 @@ sudo rm -rf /usr/local/zig /usr/local/zls /opt/zig /opt/zls
 sudo rm -f /usr/local/bin/zig /usr/local/bin/zls
 ```
 
-Then install the user-local version:
+Then install fresh:
 
 ```bash
 ./zig-installer install
 ```
+
+**Note:** This approach requires redownloading everything, which wastes bandwidth and time. The migrate command is recommended instead.
 
 ## PATH Configuration
 
@@ -678,13 +777,22 @@ Not currently. The installer uses `~/.local/share/zig` and `~/.local/share/zls` 
 
 ### What happens to my old versions after migration?
 
-When you run `zig-installer migrate` or choose "Migrate" during install:
+When you run `zig-installer migrate`:
 
-1. **System installations are removed:** All versions in `/opt/zig`, `/usr/local/zig`, etc.
-2. **Symlinks are removed:** `/usr/local/bin/zig` and `/usr/local/bin/zls`
-3. **User-local versions are preserved:** Any versions you've already installed to `~/.local/share/zig` remain
+1. **Zig versions are MOVED (not deleted):** All versions in `/opt/zig` are moved to `~/.local/share/zig/`
+2. **ZLS is MOVED (not deleted):** The ZLS installation in `/opt/zls` is moved to `~/.local/share/zls/`
+3. **Symlinks are recreated:** Your previously active version remains active after migration
+4. **No redownload needed:** Everything works immediately without reinstallation
 
-After migration, run `zig-installer install` to install the version you need.
+Example:
+- Before: `/opt/zig/zig-linux-x86_64-0.13.0` (127 MB)
+- After: `~/.local/share/zig/zig-linux-x86_64-0.13.0` (same 127 MB, moved)
+
+Use `--dry-run` to preview what will be migrated before making changes:
+
+```bash
+./zig-installer migrate --dry-run
+```
 
 ### How do I check which installation I'm using?
 
