@@ -25,4 +25,4 @@
 !internal/**
 
 # Allow golangci-lint configuration file
-.golangci.yml
+!.golangci.yml
