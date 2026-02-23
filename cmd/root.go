@@ -1,3 +1,4 @@
+// Package cmd defines the root command and shared functionality for the zig-installer CLI application. It sets up the main command structure, global flags, configuration loading, logging, and a custom help template with Catppuccin colors. The RootCommand struct encapsulates the Cobra command and its dependencies, providing a clean interface for subcommands to access shared options and utilities.
 package cmd
 
 import (
