@@ -165,7 +165,7 @@ func (rc *RootCommand) customHelpFunc(cmd *cobra.Command, args []string) {
 	helpText := buildHelpMessage(cmd, styles, noColor)
 
 	// Print to stdout
-	fmt.Fprint(cmd.OutOrStdout(), helpText)
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), helpText)
 }
 
 // buildHelpMessage constructs the colorized help output

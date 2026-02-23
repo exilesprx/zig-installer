@@ -33,7 +33,7 @@ jobs:
       - name: Install golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          version: 1.64.8
           args: --timeout=5m
           skip-cache: true
 
