@@ -184,22 +184,26 @@ func DisplayVersionsTable(versions []VersionInfo, noColor bool) error {
 		})
 	}
 
-	// Print table
-	if noColor {
-		// Save original color state by checking if colors are currently active
-		// pterm doesn't expose a getter, so we track via the disable/enable pair
-		pterm.DisableColor()
-		defer pterm.EnableColor()
-	}
+	// Print table (wrap color toggle in closure to guarantee restore)
+	if err := func() error {
+		if noColor {
+			pterm.DisableColor()
+			defer pterm.EnableColor()
+		}
 
-	if err := pterm.DefaultTable.WithHasHeader().WithData(tableData).Render(); err != nil {
+		if err := pterm.DefaultTable.WithHasHeader().WithData(tableData).Render(); err != nil {
+			return err
+		}
+
+		// Print total
+		pterm.Println()
+		pterm.Printf("Total disk usage: %s\n", FormatBytes(totalSize))
+		pterm.Println()
+
+		return nil
+	}(); err != nil {
 		return err
 	}
-
-	// Print total
-	pterm.Println()
-	pterm.Printf("Total disk usage: %s\n", FormatBytes(totalSize))
-	pterm.Println()
 
 	return nil
 }

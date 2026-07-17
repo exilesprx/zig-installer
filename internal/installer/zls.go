@@ -89,14 +89,14 @@ func InstallZLS(config *config.Config, logger logger.ILogger, formatter OutputFo
 			cmd := exec.Command("git", "reset", "--hard", "HEAD")
 			cmd.Dir = config.ZLSDir
 			if output, err := cmd.CombinedOutput(); err != nil {
-				formatter.PrintWarning("Repository reset", fmt.Sprintf("Failed to reset: %s", output))
+				return fmt.Errorf("failed to reset repository: %s", output)
 			}
 
 			// Switch to master and pull latest
 			cmd = exec.Command("git", "checkout", "master")
 			cmd.Dir = config.ZLSDir
 			if output, err := cmd.CombinedOutput(); err != nil {
-				formatter.PrintWarning("Branch switch", fmt.Sprintf("Failed to checkout master: %s", output))
+				return fmt.Errorf("failed to checkout master: %s", output)
 			}
 
 			cmd = exec.Command("git", "pull", "origin", "master")
