@@ -42,7 +42,7 @@ func NewVersionCommand() *VersionCommand {
 		Short: "Show version information",
 		Long:  `Display the version, commit hash, and build date of the Zig installer tool.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Zig Installer v%s\n", buildInfo.Version)
+			fmt.Printf("Zig Installer %s\n", buildInfo.Version)
 			fmt.Printf("Commit: %s\n", buildInfo.Commit)
 			fmt.Printf("Built on: %s\n", buildInfo.BuildDate)
 		},

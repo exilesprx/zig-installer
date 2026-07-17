@@ -17,7 +17,7 @@ legacy_zls_path := "/opt/zls"
 _setup:
   #!/usr/bin/env bash
   set -euo pipefail
-  VERSION=$(git describe --exact-match --tags 2>/dev/null || echo "$(git rev-parse --short=12 HEAD)-dev")
+  VERSION=$(git describe --tags)
   COMMIT=$(git rev-parse HEAD)
   DATE=$(date)
   # Use environment variable directly or fall back to default if not set
