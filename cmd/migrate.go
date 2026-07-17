@@ -48,7 +48,11 @@ Flags:
   --dry-run    Show what would be migrated without making changes`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Load config and logger
-			cfg, log, err := mc.rootCmd.LoadLoggerAndConfig()
+			cfg, err := mc.rootCmd.LoadConfig()
+			if err != nil {
+				return err
+			}
+			log, err := mc.rootCmd.CreateLogger(cfg)
 			if err != nil {
 				return err
 			}

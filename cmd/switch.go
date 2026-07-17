@@ -51,10 +51,15 @@ If you need a different ZLS version, reinstall it with the matching Zig version.
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			// Load configuration and logger
-			cfg, log, err := rootCmd.LoadLoggerAndConfig()
+			cfg, err := rootCmd.LoadConfig()
 			styles := tui.LoadStyles()
 			if err != nil {
 				fmt.Printf("Error initializing: %v\n", err)
+				os.Exit(1)
+			}
+			log, err := rootCmd.CreateLogger(cfg)
+			if err != nil {
+				fmt.Printf("Error initializing logger: %v\n", err)
 				os.Exit(1)
 			}
 			defer func() { _ = log.Close() }()

@@ -108,15 +108,15 @@ func (rc *RootCommand) AddCommands() {
 	rc.setupHelpTemplate()
 }
 
-// LoadLoggerAndConfig prepares the logger and config for commands
-func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, error) {
+// LoadConfig loads configuration from .env file and CLI flags
+func (rc *RootCommand) LoadConfig() (*config.Config, error) {
 	// Initialize a fresh Viper instance that will ONLY handle .env file settings
 	v := config.InitViper()
 
 	// Load only .env configurable settings using Viper
 	cfg, err := config.LoadEnvConfig(v, rc.options.CfgFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to load .env configuration: %w", err)
+		return nil, fmt.Errorf("failed to load .env configuration: %w", err)
 	}
 
 	// Set all Cobra-managed config values from command-line flags
@@ -132,10 +132,14 @@ func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, er
 	cfg.NoCleanup = rc.options.NoCleanup
 	cfg.KeepLast = rc.options.KeepLast
 
-	// Initialize logger
+	return cfg, nil
+}
+
+// CreateLogger creates a logger based on the provided configuration
+func (rc *RootCommand) CreateLogger(cfg *config.Config) (logger.ILogger, error) {
 	fileLog, err := logger.NewFileLogger(cfg.LogFile, cfg.EnableLog)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize logger: %w", err)
+		return nil, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
 	var log logger.ILogger = fileLog
@@ -147,7 +151,7 @@ func (rc *RootCommand) LoadLoggerAndConfig() (*config.Config, logger.ILogger, er
 		log = logger.NewMultiLogger(fileLog, consoleLog)
 	}
 
-	return cfg, log, nil
+	return log, nil
 }
 
 // setupHelpTemplate configures a custom help template with Catppuccin colors for all commands

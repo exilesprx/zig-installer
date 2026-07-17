@@ -38,10 +38,15 @@ By default, both Zig and ZLS will be installed unless --zig-only or --zls-only i
 You can specify a version to install using --version, otherwise the latest master version will be used.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use the provided root command instead of creating a new one
-			cfg, log, err := rootCmd.LoadLoggerAndConfig()
+			cfg, err := rootCmd.LoadConfig()
 			styles := tui.LoadStyles()
 			if err != nil {
 				fmt.Printf("Error initializing: %v\n", err)
+				os.Exit(1)
+			}
+			log, err := rootCmd.CreateLogger(cfg)
+			if err != nil {
+				fmt.Printf("Error initializing logger: %v\n", err)
 				os.Exit(1)
 			}
 			defer func() { _ = log.Close() }()

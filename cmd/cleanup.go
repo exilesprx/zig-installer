@@ -35,10 +35,15 @@ func NewCleanupCommand(options *CommandOptions, rootCmd *RootCommand) *CleanupCo
 Shows a list of installed versions and allows you to select which to remove.
 The currently active version cannot be removed.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cfg, log, err := rootCmd.LoadLoggerAndConfig()
+			cfg, err := rootCmd.LoadConfig()
 			styles := tui.LoadStyles()
 			if err != nil {
 				fmt.Printf("Error initializing: %v\n", err)
+				os.Exit(1)
+			}
+			log, err := rootCmd.CreateLogger(cfg)
+			if err != nil {
+				fmt.Printf("Error initializing logger: %v\n", err)
 				os.Exit(1)
 			}
 			defer func() { _ = log.Close() }()
