@@ -8,7 +8,7 @@ import (
 
 // Default build information (set via ldflags at build time)
 var (
-	Version   = "4.0.0"
+	Version   = "unknown"
 	Commit    = "unknown"
 	BuildDate = "unknown"
 )
