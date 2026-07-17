@@ -70,7 +70,11 @@ func FormatBytes(bytes int64) string {
 		exp++
 	}
 
-	units := []string{"KB", "MB", "GB", "TB"}
+	units := []string{"KB", "MB", "GB", "TB", "PB"}
+	if exp >= len(units) {
+		exp = len(units) - 1
+		div = 1 << (10 * uint(exp))
+	}
 	return fmt.Sprintf("%.0f %s", float64(bytes)/float64(div), units[exp])
 }
 
@@ -182,8 +186,10 @@ func DisplayVersionsTable(versions []VersionInfo, noColor bool) error {
 
 	// Print table
 	if noColor {
+		// Save original color state by checking if colors are currently active
+		// pterm doesn't expose a getter, so we track via the disable/enable pair
 		pterm.DisableColor()
-		defer func() { pterm.EnableColor() }()
+		defer pterm.EnableColor()
 	}
 
 	if err := pterm.DefaultTable.WithHasHeader().WithData(tableData).Render(); err != nil {

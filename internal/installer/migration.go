@@ -383,7 +383,7 @@ func RecreateZLSSymlink(binDir, zlsDir string, formatter OutputFormatter, dryRun
 
 // CleanupSystemSymlinks removes system symlinks
 func CleanupSystemSymlinks(formatter OutputFormatter, dryRun bool) error {
-	systemBinLinks := []string{"/usr/local/bin/zig", "/usr/local/bin/zls", "/usr/bin/zig", "/usr/bin/zls"}
+	systemBinLinks := config.GetSystemSymlinkPaths()
 
 	removedCount := 0
 	for _, link := range systemBinLinks {
@@ -489,10 +489,10 @@ func PerformMigration(systemDir string, formatter OutputFormatter, logger logger
 
 	// Ensure user-local directories exist (except in dry-run mode)
 	if !dryRun {
-		if err := os.MkdirAll(userZigDir, 0755); err != nil {
+		if err := os.MkdirAll(userZigDir, 0o755); err != nil {
 			return fmt.Errorf("could not create %s: %w", userZigDir, err)
 		}
-		if err := os.MkdirAll(userBinDir, 0755); err != nil {
+		if err := os.MkdirAll(userBinDir, 0o755); err != nil {
 			return fmt.Errorf("could not create %s: %w", userBinDir, err)
 		}
 	}
@@ -523,7 +523,7 @@ func PerformMigration(systemDir string, formatter OutputFormatter, logger logger
 
 	// Check for ZLS
 	hasZLS := false
-	systemZLSDirs := []string{"/opt/zls", "/usr/local/zls"}
+	systemZLSDirs := config.GetSystemZLSDirs()
 	var systemZLSDir string
 	for _, dir := range systemZLSDirs {
 		if _, err := os.Stat(dir); err == nil {

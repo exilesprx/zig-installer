@@ -48,7 +48,8 @@ The currently active version cannot be removed.`,
 				log.LogError("Cleanup only manages user-local installations")
 				fmt.Println(tui.PrintWithStyles(
 					fmt.Sprintf("Error: cleanup only manages user-local installations.\n\nExpected path: ~/.local/share/zig\nGot: %s", cfg.ZigDir),
-					styles.Error, cfg.NoColor))
+					styles.Error, cfg.NoColor,
+				))
 				os.Exit(1)
 			}
 
@@ -83,4 +84,9 @@ The currently active version cannot be removed.`,
 
 	cc.cmd = cleanupCmd
 	return cc
+}
+
+// Command returns the cobra command
+func (cc *CleanupCommand) Command() *cobra.Command {
+	return cc.cmd
 }

@@ -27,7 +27,6 @@ Before running the program, ensure you have the following dependencies installed
 
 - `wget` (for downloading Zig binary)
 - `git` (for downloading ZLS)
-- `jq` (for parsing version information)
 - `minisign` (for verifying Zig download)
 - `xz` (for extracting archives)
 
@@ -372,7 +371,7 @@ This program can be configured in two ways (in order of precedence):
 1. **Command-line flags**: Options provided directly when running the program
 2. **Configuration file**: Settings in an `.env` file
 
-Before running the program, it will check for required dependencies like `wget`, `git`, `jq`, `minisign`, and `xz`. If any are missing, it will inform you so you can install them.
+Before running the program, it will check for required dependencies like `wget`, `git`, `minisign`, and `xz`. If any are missing, it will inform you so you can install them.
 
 ### Configuration File (.env)
 

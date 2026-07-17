@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/exilesprx/zig-installer/internal/config"
@@ -117,11 +118,16 @@ func (tf *TaskFormatter) PrintWarning(name, output string) {
 
 // getZigVersion fetches version information from ziglang.org
 func getZigVersion(zigIndexURL string, requestedVersion string) (*ZigVersionInfo, error) {
-	resp, err := http.Get(zigIndexURL)
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(zigIndexURL)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch version index: HTTP %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

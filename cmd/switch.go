@@ -64,7 +64,8 @@ If you need a different ZLS version, reinstall it with the matching Zig version.
 				log.LogError("Switch only works with user-local installations")
 				fmt.Println(tui.PrintWithStyles(
 					fmt.Sprintf("Error: switch only works with user-local installations.\n\nExpected path: ~/.local/share/zig\nGot: %s", cfg.ZigDir),
-					styles.Error, cfg.NoColor))
+					styles.Error, cfg.NoColor,
+				))
 				os.Exit(1)
 			}
 
@@ -90,6 +91,15 @@ If you need a different ZLS version, reinstall it with the matching Zig version.
 			} else if sc.version != "" {
 				// Check if provided via --version flag
 				targetVersion = sc.version
+			}
+
+			// Validate version string if provided
+			if targetVersion != "" && !isValidVersion(targetVersion) {
+				log.LogError("Invalid version format: %s", targetVersion)
+				fmt.Println(styles.Error.Render(
+					fmt.Sprintf("Error: invalid version format %q. Expected semver (e.g., 0.13.0)", targetVersion),
+				))
+				os.Exit(1)
 			}
 
 			// If no version specified, prompt interactively
@@ -148,7 +158,7 @@ If you need a different ZLS version, reinstall it with the matching Zig version.
 	return sc
 }
 
-// GetCommand returns the cobra command
-func (sc *SwitchCommand) GetCommand() *cobra.Command {
+// Command returns the cobra command
+func (sc *SwitchCommand) Command() *cobra.Command {
 	return sc.cmd
 }

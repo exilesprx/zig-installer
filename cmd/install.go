@@ -122,6 +122,18 @@ You can specify a version to install using --version, otherwise the latest maste
 				// No system installation detected, proceed normally
 			}
 
+			// Validate version string if provided
+			if ic.zigVersion != "" && ic.zigVersion != "master" {
+				if !isValidVersion(ic.zigVersion) {
+					log.LogError("Invalid version format: %s", ic.zigVersion)
+					fmt.Println(tui.PrintWithStyles(
+						fmt.Sprintf("Error: invalid version format %q. Expected semver (e.g., 0.13.0) or \"master\"", ic.zigVersion),
+						styles.Error, cfg.NoColor,
+					))
+					os.Exit(1)
+				}
+			}
+
 			// Run the TUI installer
 			runInstallation(cfg, styles, log, ic.zigVersion)
 		},
@@ -132,6 +144,11 @@ You can specify a version to install using --version, otherwise the latest maste
 
 	ic.cmd = installCmd
 	return ic
+}
+
+// Command returns the cobra command
+func (ic *InstallCommand) Command() *cobra.Command {
+	return ic.cmd
 }
 
 // runInstallation starts the installation process with simple, clean output
@@ -149,7 +166,7 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 		formatter.PrintSection("Zig Installation")
 
 		var err error
-		zigVersion, err = installer.InstallZig(nil, config, logger, formatter, zigVersion)
+		zigVersion, err = installer.InstallZig(config, logger, formatter, zigVersion)
 		if err != nil {
 			logger.LogError("Zig installation failed: %v", err)
 			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
@@ -188,7 +205,7 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 		logger.LogInfo("Starting ZLS installation")
 		formatter.PrintSection("ZLS Installation")
 
-		if err := installer.InstallZLS(nil, config, logger, formatter, zigVersion); err != nil {
+		if err := installer.InstallZLS(config, logger, formatter, zigVersion); err != nil {
 			logger.LogError("ZLS installation failed: %v", err)
 			fmt.Println(styles.Error.Render(fmt.Sprintf("Error: %v", err)))
 			return
@@ -281,7 +298,7 @@ func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) 
 // checkDependencies verifies all required tools are installed
 func checkDependencies() error {
 	var missingDeps []string
-	requiredDeps := []string{"git", "wget", "jq", "minisign", "xz"}
+	requiredDeps := []string{"git", "wget", "minisign", "xz"}
 
 	for _, dep := range requiredDeps {
 		if _, err := exec.LookPath(dep); err != nil {
@@ -297,4 +314,20 @@ func checkDependencies() error {
 		}
 	}
 	return nil
+}
+
+// isValidVersion checks if a version string matches expected format (semver or semver-like)
+func isValidVersion(version string) bool {
+	if version == "master" {
+		return true
+	}
+	// Match patterns like 0.13.0, 0.12.0-dev.123, 0.13.0-rc.1
+	for _, c := range version {
+		if c >= '0' && c <= '9' || c == '.' || c == '-' {
+			continue
+		}
+		return false
+	}
+	// Must contain at least one dot (e.g., 0.13)
+	return strings.Contains(version, ".")
 }

@@ -16,7 +16,7 @@ const (
 	defaultEnvFile     = ".env"
 	defaultVerbose     = false
 	defaultLogFile     = "zig-install.log"
-	defaultEnableLog   = false
+	defaultEnableLog   = true
 )
 
 // DefaultConfig contains the default configuration values
@@ -54,6 +54,21 @@ func GetSystemZigDirs() []string {
 	default: // linux
 		return []string{"/opt/zig", "/usr/local/zig"}
 	}
+}
+
+// GetSystemZLSDirs returns potential system ZLS installation directories
+func GetSystemZLSDirs() []string {
+	switch runtime.GOOS {
+	case "darwin":
+		return []string{"/usr/local/zls", "/opt/zls"}
+	default: // linux
+		return []string{"/opt/zls", "/usr/local/zls"}
+	}
+}
+
+// GetSystemSymlinkPaths returns binary symlink paths used by system installations
+func GetSystemSymlinkPaths() []string {
+	return []string{"/usr/local/bin/zig", "/usr/local/bin/zls", "/usr/bin/zig", "/usr/bin/zls"}
 }
 
 // DetectSystemInstallation checks if Zig is installed system-wide

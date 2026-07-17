@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/exilesprx/zig-installer/internal/config"
+	"github.com/exilesprx/zig-installer/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -18,10 +20,12 @@ func NewEnvCommand(options *CommandOptions, root *RootCommand) *EnvCommand {
 		Short: "Generate a template environment file",
 		Long:  `Creates a template .env file with default configuration values that can be customized.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, log, err := root.LoadLoggerAndConfig()
+			cfg := config.NewConfig()
+			log, err := logger.NewFileLogger(cfg.LogFile, cfg.EnableLog)
 			if err != nil {
 				return fmt.Errorf("failed to initialize: %w", err)
 			}
+			defer func() { _ = log.Close() }()
 
 			if err := cfg.GenerateEnvFile(); err != nil {
 				log.LogError("Failed to generate environment file: %v", err)
@@ -38,4 +42,9 @@ func NewEnvCommand(options *CommandOptions, root *RootCommand) *EnvCommand {
 		options: options,
 		root:    root,
 	}
+}
+
+// Command returns the cobra command
+func (ec *EnvCommand) Command() *cobra.Command {
+	return ec.cmd
 }

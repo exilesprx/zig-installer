@@ -53,3 +53,8 @@ func NewVersionCommand() *VersionCommand {
 		buildInfo: buildInfo,
 	}
 }
+
+// Command returns the cobra command
+func (vc *VersionCommand) Command() *cobra.Command {
+	return vc.cmd
+}

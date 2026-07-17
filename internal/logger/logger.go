@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/exilesprx/zig-installer/internal/tui"
 )
 
 // ILogger defines the interface for logging
@@ -89,12 +91,18 @@ func (l *FileLogger) LogInfo(format string, args ...interface{}) {
 	l.Log(fmt.Sprintf("INFO: %s", message))
 }
 
-// ConsoleLogger logs to the console
-type ConsoleLogger struct{}
+// ConsoleLogger logs to the console using tui styles
+type ConsoleLogger struct {
+	styles  *tui.Styles
+	noColor bool
+}
 
-// NewConsoleLogger creates a new console logger
-func NewConsoleLogger() *ConsoleLogger {
-	return &ConsoleLogger{}
+// NewConsoleLogger creates a new console logger with tui styling
+func NewConsoleLogger(styles *tui.Styles, noColor bool) *ConsoleLogger {
+	return &ConsoleLogger{
+		styles:  styles,
+		noColor: noColor,
+	}
 }
 
 // Close is a no-op for console logger
@@ -105,17 +113,73 @@ func (l *ConsoleLogger) Close() error {
 // Log logs a message to the console
 func (l *ConsoleLogger) Log(message string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Printf("[%s] %s\n", timestamp, message)
+	stamped := fmt.Sprintf("[%s] %s", timestamp, message)
+	if l.styles != nil && !l.noColor {
+		fmt.Println(tui.PrintWithStyles(stamped, l.styles.Detail, l.noColor))
+	} else {
+		fmt.Println(stamped)
+	}
 }
 
 // LogError logs an error message to the console
 func (l *ConsoleLogger) LogError(format string, args ...interface{}) {
 	message := fmt.Sprintf(format, args...)
-	l.Log(fmt.Sprintf("ERROR: %s", message))
+	stamped := fmt.Sprintf("ERROR: %s", message)
+	if l.styles != nil && !l.noColor {
+		fmt.Println(tui.PrintWithStyles(stamped, l.styles.Error, l.noColor))
+	} else {
+		fmt.Println(stamped)
+	}
 }
 
 // LogInfo logs an info message to the console
 func (l *ConsoleLogger) LogInfo(format string, args ...interface{}) {
 	message := fmt.Sprintf(format, args...)
-	l.Log(fmt.Sprintf("INFO: %s", message))
+	stamped := fmt.Sprintf("INFO: %s", message)
+	if l.styles != nil && !l.noColor {
+		fmt.Println(tui.PrintWithStyles(stamped, l.styles.Info, l.noColor))
+	} else {
+		fmt.Println(stamped)
+	}
+}
+
+// MultiLogger delegates logging to multiple ILogger instances
+type MultiLogger struct {
+	loggers []ILogger
+}
+
+// NewMultiLogger creates a MultiLogger that wraps multiple loggers
+func NewMultiLogger(loggers ...ILogger) *MultiLogger {
+	return &MultiLogger{loggers: loggers}
+}
+
+// Close closes all wrapped loggers
+func (m *MultiLogger) Close() error {
+	for _, l := range m.loggers {
+		if err := l.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Log delegates to all wrapped loggers
+func (m *MultiLogger) Log(message string) {
+	for _, l := range m.loggers {
+		l.Log(message)
+	}
+}
+
+// LogError delegates to all wrapped loggers
+func (m *MultiLogger) LogError(format string, args ...interface{}) {
+	for _, l := range m.loggers {
+		l.LogError(format, args...)
+	}
+}
+
+// LogInfo delegates to all wrapped loggers
+func (m *MultiLogger) LogInfo(format string, args ...interface{}) {
+	for _, l := range m.loggers {
+		l.LogInfo(format, args...)
+	}
 }
