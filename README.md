@@ -411,7 +411,7 @@ Creating a `.env` file is optional, but it allows for easy customization without
 When building from source, you can also customize some defaults using linker flags:
 
 ```bash
-go build -ldflags="-X 'github.com/exilesprx/zig-install/internal/config.Version=VERSION' 'github.com/exilesprx/zig-install/internal/config.Commit=COMMIT' 'github.com/exilesprx/zig-install/internal/config.BuildDate=DATE'"
+go build -ldflags="-X 'github.com/exilesprx/zig-installer/internal/config.Version=VERSION' 'github.com/exilesprx/zig-installer/internal/config.Commit=COMMIT' 'github.com/exilesprx/zig-installer/internal/config.BuildDate=DATE'"
 ```
 
 The justfile in this project automatically sets the ldflags during build and is the recommended way to build.
@@ -747,7 +747,7 @@ Yes, but **macOS support is experimental**. The installer will display a warning
 
 ```
 ⚠ Warning: macOS support is experimental
-  Please report any issues at: https://github.com/exilesprx/zig-install/issues
+  Please report any issues at: https://github.com/exilesprx/zig-installer/issues
 ```
 
 Both ARM64 (Apple Silicon) and x86_64 (Intel) are supported.
