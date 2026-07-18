@@ -1,10 +1,11 @@
 package logger
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
-// mockLogger is a test implementation of ILogger
 type mockLogger struct {
 	logs     []string
 	errors   []string
@@ -26,11 +27,11 @@ func (m *mockLogger) Log(message string) {
 	m.logs = append(m.logs, message)
 }
 
-func (m *mockLogger) LogError(format string, args ...interface{}) {
+func (m *mockLogger) LogError(format string, args ...any) {
 	m.errors = append(m.errors, format)
 }
 
-func (m *mockLogger) LogInfo(format string, args ...interface{}) {
+func (m *mockLogger) LogInfo(format string, args ...any) {
 	m.infos = append(m.infos, format)
 }
 
@@ -96,23 +97,31 @@ func TestMultiLogger_Close_ClosesAll(t *testing.T) {
 	}
 }
 
-func TestMultiLogger_Close_ReturnsFirstError(t *testing.T) {
+func TestMultiLogger_Close_CollectsErrors(t *testing.T) {
 	m1 := newMockLogger()
-	m1.closeErr = nil
+	m1.closeErr = fmt.Errorf("error from m1")
 	m2 := newMockLogger()
 	m2.closeErr = nil
 	ml := NewMultiLogger(m1, m2)
 
 	err := ml.Close()
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+	if !m1.closed {
+		t.Error("expected m1 to be closed")
+	}
+	if !m2.closed {
+		t.Error("expected m2 to be closed")
+	}
+	if !strings.Contains(err.Error(), "error from m1") {
+		t.Errorf("expected error to contain 'error from m1', got %v", err)
 	}
 }
 
 func TestMultiLogger_EmptyLoggers(t *testing.T) {
 	ml := NewMultiLogger()
 
-	// Should not panic
 	ml.Log("test")
 	ml.LogError("error")
 	ml.LogInfo("info")

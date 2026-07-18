@@ -13,7 +13,7 @@ import (
 )
 
 // SwitchToVersion switches the active Zig version by updating the symlink
-func SwitchToVersion(cfg *config.Config, log logger.ILogger, formatter OutputFormatter, targetVersion string) error {
+func SwitchToVersion(cfg *config.Config, log logger.Logger, formatter OutputFormatter, targetVersion string) error {
 	formatter.PrintSection("Switching Zig Version")
 
 	// Scan installed versions

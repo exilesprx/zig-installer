@@ -432,7 +432,7 @@ func absInt64(n int64) int64 {
 }
 
 // DetectAndPromptMigration checks for system installation and prompts user
-func DetectAndPromptMigration(formatter OutputFormatter, logger logger.ILogger) (MigrationChoice, string, error) {
+func DetectAndPromptMigration(formatter OutputFormatter, logger logger.Logger) (MigrationChoice, string, error) {
 	systemDir, found := config.DetectSystemInstallation()
 	if !found {
 		return "", "", nil
@@ -470,7 +470,7 @@ func DetectAndPromptMigration(formatter OutputFormatter, logger logger.ILogger) 
 }
 
 // PerformMigration migrates system installation to user-local using copy-verify-delete pattern
-func PerformMigration(systemDir string, formatter OutputFormatter, logger logger.ILogger, dryRun bool) error {
+func PerformMigration(systemDir string, formatter OutputFormatter, logger logger.Logger, dryRun bool) error {
 	if dryRun {
 		formatter.PrintProgress("Migration", "Starting migration preview (dry run)")
 	} else {

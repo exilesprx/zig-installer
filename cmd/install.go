@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// InstallCommand encapsulates the install command
 type InstallCommand struct {
 	cmd        *cobra.Command
 	options    *CommandOptions
@@ -23,7 +22,6 @@ type InstallCommand struct {
 	zigVersion string
 }
 
-// NewInstallCommand creates a new install command instance
 func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCommand {
 	ic := &InstallCommand{
 		options: options,
@@ -37,7 +35,6 @@ func NewInstallCommand(options *CommandOptions, rootCmd *RootCommand) *InstallCo
 By default, both Zig and ZLS will be installed unless --zig-only or --zls-only is specified.
 You can specify a version to install using --version, otherwise the latest master version will be used.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Use the provided root command instead of creating a new one
 			cfg, err := rootCmd.LoadConfig()
 			styles := tui.LoadStyles()
 			if err != nil {
@@ -70,31 +67,26 @@ You can specify a version to install using --version, otherwise the latest maste
 
 			log.LogInfo("Starting installation process")
 
-			// Check that we're NOT running as root
 			if err := checkNotRoot(); err != nil {
 				log.LogError("Root check failed: %v", err)
 				fmt.Println(tui.PrintWithStyles(fmt.Sprintf("Error: %v", err), styles.Error, cfg.NoColor))
 				os.Exit(1)
 			}
 
-			// Show macOS warning
 			if runtime.GOOS == "darwin" {
 				formatter := installer.NewTaskFormatter(cfg, styles)
 				formatter.PrintWarning("macOS Support", "macOS support is experimental and may have issues")
 				fmt.Println() // Blank line
 			}
 
-			// Then check for dependencies
 			if err := checkDependencies(); err != nil {
 				log.LogError("Dependency check failed: %v", err)
 				fmt.Println(tui.PrintWithStyles(fmt.Sprintf("Error: %v", err), styles.Error, cfg.NoColor))
 				os.Exit(1)
 			}
 
-			// Create formatter for migration check
 			formatter := installer.NewTaskFormatter(cfg, styles)
 
-			// Check for existing system installation and prompt for migration
 			migrationChoice, systemDir, err := installer.DetectAndPromptMigration(formatter, log)
 			if err != nil {
 				log.LogError("Migration prompt failed: %v", err)
@@ -127,7 +119,6 @@ You can specify a version to install using --version, otherwise the latest maste
 				// No system installation detected, proceed normally
 			}
 
-			// Validate version string if provided
 			if ic.zigVersion != "" && ic.zigVersion != "master" {
 				if !isValidVersion(ic.zigVersion) {
 					log.LogError("Invalid version format: %s", ic.zigVersion)
@@ -139,7 +130,6 @@ You can specify a version to install using --version, otherwise the latest maste
 				}
 			}
 
-			// Run the TUI installer
 			runInstallation(cfg, styles, log, ic.zigVersion)
 		},
 	}
@@ -151,21 +141,16 @@ You can specify a version to install using --version, otherwise the latest maste
 	return ic
 }
 
-// Command returns the cobra command
 func (ic *InstallCommand) Command() *cobra.Command {
 	return ic.cmd
 }
 
-// runInstallation starts the installation process with simple, clean output
-func runInstallation(config *config.Config, styles *tui.Styles, logger logger.ILogger, zigVersion string) {
-	// Create formatter instance for dependency injection
+func runInstallation(config *config.Config, styles *tui.Styles, logger logger.Logger, zigVersion string) {
 	formatter := installer.NewTaskFormatter(config, styles)
 
-	// System check section
 	formatter.PrintSection("System Check")
 	formatter.PrintSuccess("Dependencies verified, ready to install", "")
 
-	// Store Zig version to match with ZLS
 	if !config.ZLSOnly {
 		logger.LogInfo("Starting Zig installation")
 		formatter.PrintSection("Zig Installation")
@@ -180,22 +165,18 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 		logger.LogInfo("Zig installation completed successfully")
 		formatter.PrintSuccess("Zig compiler installed and configured", "")
 
-		// Check PATH configuration
 		fmt.Println() // Blank line for readability
 		checkPathConfiguration(config.BinDir, formatter)
 		fmt.Println() // Blank line
 
-		// Auto-cleanup prompt (enabled by default, can be disabled with --no-cleanup)
 		if !config.NoCleanup {
 			logger.LogInfo("Checking for auto-cleanup opportunity")
 			if err := installer.AutoCleanupPrompt(config, logger, formatter, zigVersion); err != nil {
-				// Don't fail the installation, just log the error
 				logger.LogError("Auto-cleanup failed: %v", err)
 				formatter.PrintError("Auto-cleanup", fmt.Sprintf("Cleanup failed: %v", err))
 			}
 		}
 	} else {
-		// If only installing ZLS, get the current Zig version
 		zigCmd := exec.Command("zig", "version")
 		output, err := zigCmd.Output()
 		if err != nil {
@@ -225,7 +206,6 @@ func runInstallation(config *config.Config, styles *tui.Styles, logger logger.IL
 	fmt.Println(styles.Separator.Render(strings.Repeat("─", 40)))
 }
 
-// checkNotRoot ensures the installer is NOT run as root
 func checkNotRoot() error {
 	if os.Geteuid() == 0 {
 		return fmt.Errorf(`❌ ERROR: This installer should NOT be run with sudo.
@@ -248,7 +228,6 @@ Then run: ./zig-installer install (without sudo)`)
 	return nil
 }
 
-// checkPathConfiguration warns if binDir is not in PATH
 func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) {
 	pathEnv := os.Getenv("PATH")
 	if pathEnv == "" {
@@ -257,13 +236,10 @@ func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) 
 
 	pathDirs := strings.Split(pathEnv, string(os.PathListSeparator))
 
-	// Check if binDir is in PATH
 	for _, dir := range pathDirs {
-		// Direct match
 		if dir == binDir {
 			return
 		}
-		// Also check with resolved symlinks
 		if absDir, err := filepath.EvalSymlinks(dir); err == nil {
 			if absBin, err := filepath.EvalSymlinks(binDir); err == nil {
 				if absDir == absBin {
@@ -273,7 +249,6 @@ func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) 
 		}
 	}
 
-	// Not in PATH - show warning with shell-specific instructions
 	formatter.PrintWarning("PATH Configuration Required",
 		fmt.Sprintf("%s is not in your PATH", binDir))
 
@@ -287,7 +262,6 @@ func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) 
 		configFile = "~/.zshrc"
 		exportCmd = fmt.Sprintf("export PATH=\"%s:$PATH\"", binDir)
 	} else {
-		// Default to bash
 		configFile = "~/.bashrc"
 		exportCmd = fmt.Sprintf("export PATH=\"%s:$PATH\"", binDir)
 	}
@@ -300,7 +274,6 @@ func checkPathConfiguration(binDir string, formatter installer.OutputFormatter) 
 		"Or simply open a new terminal session")
 }
 
-// checkDependencies verifies all required tools are installed
 func checkDependencies() error {
 	var missingDeps []string
 	requiredDeps := []string{"git", "wget", "minisign", "xz"}
@@ -314,14 +287,12 @@ func checkDependencies() error {
 	if len(missingDeps) > 0 {
 		if len(missingDeps) == 1 {
 			return fmt.Errorf("missing dependency: %s. Please install it", missingDeps[0])
-		} else {
-			return fmt.Errorf("missing dependencies: %s. Please install them", strings.Join(missingDeps, ", "))
 		}
+		return fmt.Errorf("missing dependencies: %s. Please install them", strings.Join(missingDeps, ", "))
 	}
 	return nil
 }
 
-// isValidVersion checks if a version string matches expected format (semver or semver-like)
 func isValidVersion(version string) bool {
 	if version == "master" {
 		return true

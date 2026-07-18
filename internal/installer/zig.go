@@ -56,7 +56,7 @@ func getPlatformBuildInfo(versionInfo *ZigVersionInfo) (*ZigBuildInfo, error) {
 }
 
 // InstallZig handles the Zig installation process
-func InstallZig(config *config.Config, logger logger.ILogger, formatter OutputFormatter, requestedVersion string) (string, error) {
+func InstallZig(config *config.Config, logger logger.Logger, formatter OutputFormatter, requestedVersion string) (string, error) {
 	// Get the version info
 	msg := "Fetching latest Zig version..."
 	if requestedVersion != "" && requestedVersion != "master" {

@@ -12,7 +12,7 @@ import (
 )
 
 // InstallZLS handles the ZLS installation process
-func InstallZLS(config *config.Config, logger logger.ILogger, formatter OutputFormatter, zigVersion string) error {
+func InstallZLS(config *config.Config, logger logger.Logger, formatter OutputFormatter, zigVersion string) error {
 	// Prepare directories
 	if err := os.MkdirAll(config.ZLSDir, 0o755); err != nil {
 		return fmt.Errorf("could not create directory %s: %w", config.ZLSDir, err)
